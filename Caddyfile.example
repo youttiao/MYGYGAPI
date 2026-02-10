@@ -1,0 +1,6 @@
+# Replace with your actual email for Let's Encrypt if you want
+# email you@example.com
+
+gyg.totripchina.com {
+    reverse_proxy 127.0.0.1:8123
+}

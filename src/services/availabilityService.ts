@@ -39,4 +39,12 @@ export class AvailabilityService {
   async getAvailabilities(productId: string, fromDateTime: string, toDateTime: string) {
     return this.repo.findByRange(productId, new Date(fromDateTime), new Date(toDateTime));
   }
+
+  async getAvailabilitiesByInternalProduct(
+    productId: string,
+    fromDateTime: string,
+    toDateTime: string
+  ) {
+    return this.repo.findByProductIdRange(productId, new Date(fromDateTime), new Date(toDateTime));
+  }
 }

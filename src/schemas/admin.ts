@@ -109,3 +109,12 @@ export const adminBookingsQuerySchema = z.object({
 export const adminProductsQuerySchema = z.object({
   supplierId: z.string().optional()
 });
+
+export const adminProductParamsSchema = z.object({
+  id: z.string().min(1)
+});
+
+export const adminAvailabilityQuerySchema = z.object({
+  fromDateTime: z.string().datetime({ offset: true }).optional(),
+  toDateTime: z.string().datetime({ offset: true }).optional()
+});

@@ -61,6 +61,10 @@ export class ProductService {
     return this.repo.findByExternalProductId(productId);
   }
 
+  getProductById(id: string) {
+    return this.repo.findById(id);
+  }
+
   listSupplierProducts(supplierId: string) {
     return this.repo.listBySupplierId(supplierId);
   }

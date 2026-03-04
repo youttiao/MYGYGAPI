@@ -9,6 +9,7 @@ import openapiPlugin from './plugins/openapi.js';
 import authPlugin from './plugins/auth.js';
 import adminRoutes from './routes/admin/index.js';
 import gygRoutes from './routes/gyg/index.js';
+import uiRoutes from './routes/ui/index.js';
 
 export async function buildApp(): Promise<FastifyInstance> {
   const app = Fastify({
@@ -45,6 +46,7 @@ export async function buildApp(): Promise<FastifyInstance> {
   app.get('/health', async () => ({ ok: true }));
   app.get('/openapi.json', async () => app.swagger());
 
+  await app.register(uiRoutes);
   await app.register(adminRoutes, { prefix: '/admin' });
   await app.register(gygRoutes);
 

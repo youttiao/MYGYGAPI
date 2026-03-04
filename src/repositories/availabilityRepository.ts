@@ -65,4 +65,17 @@ export class AvailabilityRepository {
       }
     });
   }
+
+  findByProductIdRange(productId: string, fromDateTime: Date, toDateTime: Date) {
+    return this.prisma.availability.findMany({
+      where: {
+        productId,
+        dateTime: {
+          gte: fromDateTime,
+          lte: toDateTime
+        }
+      },
+      orderBy: { dateTime: 'asc' }
+    });
+  }
 }

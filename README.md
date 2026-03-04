@@ -52,8 +52,12 @@ docker compose up -d --build
 
 ## Admin API
 Header: `x-admin-token: <ADMIN_TOKEN>`
-- `GET /admin/ui` 极简管理页面（页面内再输入 token）
+- `GET /` 商品管理首页（商品列表、创建、跳转日历）
+- `GET /products/:id/calendar` 单商品日历管理页面
+- `GET /gyg-bookings` GYG bookings 管理页面
 - `GET /admin/products`
+- `GET /admin/products/:id`
+- `GET /admin/products/:id/availability`
 - `POST /admin/products`
 - `POST /admin/products/:id/availability`
 - `GET /admin/bookings`

@@ -5,20 +5,21 @@ import { BookingService } from '../../services/bookingService.js';
 import {
   addAvailabilityBodySchema,
   addAvailabilityParamsSchema,
+  adminAvailabilityQuerySchema,
   adminBookingsQuerySchema,
+  adminProductParamsSchema,
   adminProductsQuerySchema,
   createProductBodySchema
 } from '../../schemas/admin.js';
-import { adminUiHtml } from './ui.js';
 
 const adminRoutes: FastifyPluginAsync = async (fastify) => {
   const productService = new ProductService(fastify.prisma);
   const availabilityService = new AvailabilityService(fastify.prisma);
   const bookingService = new BookingService(fastify.prisma);
 
-  // UI page itself is public; API actions still require x-admin-token.
+  // Legacy path kept for compatibility.
   fastify.get('/ui', async (_request, reply) => {
-    reply.type('text/html; charset=utf-8').send(adminUiHtml);
+    reply.redirect('/');
   });
 
   fastify.addHook('preHandler', fastify.verifyAdminToken);
@@ -39,6 +40,26 @@ const adminRoutes: FastifyPluginAsync = async (fastify) => {
     }
   );
 
+  fastify.get(
+    '/products/:id',
+    {
+      schema: {
+        tags: ['Admin'],
+        security: [{ AdminToken: [] }],
+        params: adminProductParamsSchema
+      }
+    },
+    async (request, reply) => {
+      const params = adminProductParamsSchema.parse(request.params);
+      const product = await productService.getProductById(params.id);
+      if (!product) {
+        reply.code(404).send({ error: 'Product not found' });
+        return;
+      }
+      return { data: product };
+    }
+  );
+
   fastify.post(
     '/products',
     {
@@ -52,6 +73,33 @@ const adminRoutes: FastifyPluginAsync = async (fastify) => {
       const body = createProductBodySchema.parse(request.body);
       const created = await productService.createProduct(body);
       reply.code(201).send(created);
+    }
+  );
+
+  fastify.get(
+    '/products/:id/availability',
+    {
+      schema: {
+        tags: ['Admin'],
+        security: [{ AdminToken: [] }],
+        params: addAvailabilityParamsSchema,
+        querystring: adminAvailabilityQuerySchema
+      }
+    },
+    async (request, reply) => {
+      const params = addAvailabilityParamsSchema.parse(request.params);
+      const query = adminAvailabilityQuerySchema.parse(request.query);
+      const product = await productService.getProductById(params.id);
+      if (!product) {
+        reply.code(404).send({ error: 'Product not found' });
+        return;
+      }
+
+      const now = new Date();
+      const from = query.fromDateTime ?? new Date(now.getTime() - 7 * 86400000).toISOString();
+      const to = query.toDateTime ?? new Date(now.getTime() + 60 * 86400000).toISOString();
+      const rows = await availabilityService.getAvailabilitiesByInternalProduct(params.id, from, to);
+      return { data: rows };
     }
   );
 

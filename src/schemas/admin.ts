@@ -1,0 +1,107 @@
+import { z } from 'zod';
+
+export const createProductBodySchema = z.object({
+  supplierId: z.string().min(1),
+  productId: z.string().min(1),
+  name: z.string().min(1),
+  description: z.string().min(1),
+  timezone: z.string().min(1),
+  currency: z.string().length(3),
+  status: z.enum(['active', 'inactive']).default('active'),
+  destinationCity: z.string().default('Berlin'),
+  destinationCountry: z.string().length(3).default('DEU'),
+  participantsMin: z.number().int().positive().optional(),
+  participantsMax: z.number().int().positive().optional(),
+  pricingCategories: z
+    .array(
+      z.object({
+        category: z.string(),
+        minTicketAmount: z.number().int().nullable().optional(),
+        maxTicketAmount: z.number().int().nullable().optional(),
+        groupSizeMin: z.number().int().nullable().optional(),
+        groupSizeMax: z.number().int().nullable().optional(),
+        ageFrom: z.number().int().nullable().optional(),
+        ageTo: z.number().int().nullable().optional(),
+        bookingCategory: z.string().nullable().optional(),
+        price: z
+          .array(z.object({ priceType: z.string(), price: z.number().int(), currency: z.string() }))
+          .nullable()
+          .optional()
+      })
+    )
+    .optional(),
+  addons: z
+    .array(
+      z.object({
+        addonType: z.enum(['FOOD', 'DRINKS', 'SAFETY', 'TRANSPORT', 'DONATION', 'OTHERS']),
+        addonDescription: z.string().max(50).optional(),
+        retailPrice: z.number().int().nonnegative(),
+        currency: z.string().length(3)
+      })
+    )
+    .optional()
+});
+
+export const addAvailabilityParamsSchema = z.object({
+  id: z.string().min(1)
+});
+
+export const addAvailabilityBodySchema = z.object({
+  availabilities: z
+    .array(
+      z.object({
+        dateTime: z.string().datetime({ offset: true }),
+        openingTimes: z
+          .array(
+            z.object({
+              fromTime: z.string(),
+              toTime: z.string()
+            })
+          )
+          .optional(),
+        cutoffSeconds: z.number().int().nonnegative().optional(),
+        vacancies: z.number().int().nonnegative().optional(),
+        vacanciesByCategory: z
+          .array(
+            z.object({
+              category: z.string(),
+              vacancies: z.number().int().nonnegative()
+            })
+          )
+          .optional(),
+        currency: z.string().length(3).optional(),
+        pricesByCategory: z
+          .object({
+            retailPrices: z.array(
+              z.object({
+                category: z.string(),
+                price: z.number().int().nonnegative()
+              })
+            )
+          })
+          .optional(),
+        tieredPricesByCategory: z
+          .object({
+            retailPrices: z.array(
+              z.object({
+                category: z.string(),
+                tiers: z.array(
+                  z.object({
+                    lowerBound: z.number().int().positive(),
+                    upperBound: z.number().int().positive().nullable().optional(),
+                    price: z.number().int().nonnegative()
+                  })
+                )
+              })
+            )
+          })
+          .optional()
+      })
+    )
+    .min(1)
+});
+
+export const adminBookingsQuerySchema = z.object({
+  status: z.enum(['created', 'confirmed', 'cancelled', 'failed']).optional(),
+  gygBookingReference: z.string().optional()
+});

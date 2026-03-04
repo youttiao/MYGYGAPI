@@ -1,0 +1,142 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Product {
+  id                 String           @id @default(cuid())
+  supplierId         String
+  productId          String           @unique
+  name               String
+  description        String
+  timezone           String
+  currency           String
+  status             String           @default("active")
+  destinationCity    String           @default("Unknown")
+  destinationCountry String           @default("DEU")
+  participantsMin    Int?             @default(1)
+  participantsMax    Int?             @default(999)
+  availabilities     Availability[]
+  pricingCategories  PricingCategory[]
+  addons             ProductAddon[]
+  reservations       Reservation[]
+  bookings           Booking[]
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
+}
+
+model Availability {
+  id                     String   @id @default(cuid())
+  product                Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  productId              String
+  dateTime               DateTime
+  openingTimes           Json?
+  cutoffSeconds          Int?
+  vacancies              Int?
+  vacanciesByCategory    Json?
+  currency               String?
+  pricesByCategory       Json?
+  tieredPricesByCategory Json?
+  lastUpdatedAt          DateTime @updatedAt
+  createdAt              DateTime @default(now())
+
+  @@unique([productId, dateTime])
+  @@index([productId, dateTime])
+}
+
+model PricingCategory {
+  id              String  @id @default(cuid())
+  product         Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  productId       String
+  category        String
+  minTicketAmount Int?
+  maxTicketAmount Int?
+  groupSizeMin    Int?
+  groupSizeMax    Int?
+  ageFrom         Int?
+  ageTo           Int?
+  bookingCategory String?
+  price           Json?
+
+  @@unique([productId, category])
+}
+
+model ProductAddon {
+  id               String  @id @default(cuid())
+  product          Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  productId        String
+  addonType        String
+  addonDescription String?
+  retailPrice      Int
+  currency         String
+
+  @@unique([productId, addonType, addonDescription])
+}
+
+model Reservation {
+  id                   String   @id @default(cuid())
+  reservationReference String   @unique
+  gygBookingReference  String   @unique
+  gygActivityReference String?
+  product              Product  @relation(fields: [productId], references: [id], onDelete: Restrict)
+  productId            String
+  dateTime             DateTime
+  bookingItems         Json
+  status               String   @default("created")
+  expiresAt            DateTime?
+  rawPayload           Json
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  booking Booking?
+
+  @@index([productId, dateTime])
+}
+
+model Booking {
+  id                   String      @id @default(cuid())
+  bookingReference     String      @unique
+  gygBookingReference  String      @unique
+  gygActivityReference String?
+  reservation          Reservation @relation(fields: [reservationId], references: [id], onDelete: Restrict)
+  reservationId        String      @unique
+  product              Product     @relation(fields: [productId], references: [id], onDelete: Restrict)
+  productId            String
+  dateTime             DateTime
+  currency             String
+  bookingItems         Json
+  addonItems           Json?
+  language             String?
+  travelers            Json
+  travelerHotel        String?
+  comment              String
+  tickets              Json
+  status               String      @default("confirmed")
+  rawPayload           Json
+  createdAt            DateTime    @default(now())
+  updatedAt            DateTime    @updatedAt
+
+  @@index([productId, dateTime])
+}
+
+model NotificationEvent {
+  id        String   @id @default(cuid())
+  payload   Json
+  createdAt DateTime @default(now())
+}
+
+model IdempotencyRecord {
+  id             String   @id @default(cuid())
+  endpoint       String
+  idempotencyKey String
+  requestHash    String?
+  responseStatus Int
+  responseBody   Json
+  createdAt      DateTime @default(now())
+
+  @@unique([endpoint, idempotencyKey])
+}

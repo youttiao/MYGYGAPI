@@ -1,69 +1,91 @@
-# GYG Inventory Bridge
+# OPS Minimal System for GetYourGuide Integrator (Supplier-side)
 
-这个仓库现在有两个入口：
+独立最小系统（SQLite 版本），用于对接 GYG Supplier Integrator API。
 
-- `app.py`：原有主应用（轻量占位版）
-- `gyg_calendar_bridge.py`：你要的独立库存/日历桥接服务（建议单独运行这个）
+## 你当前部署域名
+生产对外基地址使用：
+- `https://ops.totripchina.com`
 
-## 独立服务已实现能力（`gyg_calendar_bridge.py`）
+GYG 在 Integrator Portal 中应配置到该域名下的 supplier endpoints（例如 `https://ops.totripchina.com/1/get-availabilities/`）。
 
-- GYG Supplier 端点（HTTP Basic Auth）
-  - `GET /1/get-availabilities/`
-  - `POST /1/reserve/`
-  - `POST /1/cancel-reservation/`
-  - `POST /1/book/`
-  - `POST /1/cancel-booking/`
-  - `POST /1/notify/`
-  - `GET /1/products/{productId}/pricing-categories/`
-  - `GET /1/suppliers/{supplierId}/products/`
-  - `GET /1/products/{productId}/addons/`
-  - `GET /1/products/{productId}`
+## 技术栈
+- Node.js 20 + TypeScript
+- Fastify + zod + OpenAPI (`/docs`, `/openapi.json`)
+- Prisma + SQLite
+- Vitest
 
-- 管理日历
-  - Web 页面：`GET /`
-  - 列表：`GET /admin/calendar`
-  - 新增/更新：`POST /admin/calendar/slot`
-  - 删除：`DELETE /admin/calendar/slot?productId=...&dateTime=...`
-
-- 观测和排障
-  - `GET /orders`
-  - `GET /orders/{id}`
-  - `GET /health`
-
-## 本地运行（独立服务）
-
-```bash
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-
-export GYG_BASIC_USER="your-gyg-user"
-export GYG_BASIC_PASS="your-gyg-pass"
-export RESERVATION_HOLD_SECONDS="3600"
-
-uvicorn gyg_calendar_bridge:app --host 0.0.0.0 --port 8123
-```
-
-打开管理页：`http://127.0.0.1:8123/`
-
-## 对接逻辑（独立服务）
-
-- `get-availabilities`：从本地日历返回指定产品、时间范围内库存
-- `reserve`：校验库存并扣减，生成 reservation
-- `book`：校验 reservation 后确认订单
-- `cancel-reservation` / `cancel-booking`：回补库存
-
-错误按 GYG 习惯返回 `200` + `errorCode/errorMessage`（例如 `NO_AVAILABILITY`、`INVALID_RESERVATION`）。
+## 文档与假设
+- 端点与假设：`docs/gyg/assumptions.md`
+- curl 示例：`docs/gyg/curl-examples.md`
+- Postman：`docs/gyg/postman/GYG-OPS-Min.postman_collection.json`
 
 ## 环境变量
+复制 `.env.example` 到 `.env`：
+- `DATABASE_URL`（默认 `file:./dev.db`）
+- `BASIC_AUTH_USER`
+- `BASIC_AUTH_PASS`
+- `ADMIN_TOKEN`
+- `PORT`
+- `HOST`
 
-- `GYG_BASIC_USER`：GYG 调你接口的 Basic 用户名
-- `GYG_BASIC_PASS`：GYG 调你接口的 Basic 密码
-- `STORAGE_PATH`：SQLite 路径（默认 `./data/orders.sqlite3`）
-- `RESERVATION_HOLD_SECONDS`：reservation 过期秒数（最小 900）
+## 本地启动（不使用 docker）
+```bash
+npm install
+npx prisma generate
+npx prisma db push
+npm run prisma:seed
+npm run dev
+```
 
-## 官方文档参考
+## Docker 启动
+```bash
+docker compose up -d --build
+```
 
-- Overview: https://integrator.getyourguide.com/documentation/overview
-- Supplier-side OpenAPI: https://integrator.getyourguide.com/assets/api_documentation/supplier-api-supplier-endpoints.yaml
-- GYG-side OpenAPI: https://integrator.getyourguide.com/assets/api_documentation/supplier-api-gyg-endpoints.yaml
+容器内会自动执行：
+- `npx prisma db push`
+- `node dist/server.js`
+
+## OpenAPI
+- `GET /docs`
+- `GET /openapi.json`
+
+## Admin API
+Header: `x-admin-token: <ADMIN_TOKEN>`
+- `POST /admin/products`
+- `POST /admin/products/:id/availability`
+- `GET /admin/bookings`
+
+## GYG Supplier API（按文档路径）
+- `GET /1/get-availabilities/`
+- `POST /1/reserve/`
+- `POST /1/cancel-reservation/`
+- `POST /1/book/`
+- `POST /1/cancel-booking/`
+- `POST /1/notify/`
+- `GET /1/products/{productId}/pricing-categories/`
+- `GET /1/suppliers/{supplierId}/products/`
+- `GET /1/products/{productId}/addons/`
+- `GET /1/products/{productId}`
+
+鉴权：HTTP Basic Auth（`BASIC_AUTH_USER` / `BASIC_AUTH_PASS`）。
+
+## 幂等策略
+- reserve: `gygBookingReference` 唯一
+- book: `gygBookingReference` 唯一
+- cancel-reservation/cancel-booking: 重复调用返回成功空对象
+
+## 测试
+```bash
+npm test
+```
+
+## 快速验证顺序
+见：`docs/gyg/curl-examples.md`
+1. 创建产品（admin）
+2. 查询 availability
+3. reserve
+4. book
+5. 重复 book 验证幂等
+6. cancel booking
+7. admin 查询 booking

@@ -1,0 +1,65 @@
+{
+  "info": {
+    "name": "GYG OPS Min",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Get Availabilities",
+      "request": {
+        "auth": {
+          "type": "basic",
+          "basic": [
+            { "key": "username", "value": "{{basic_user}}", "type": "string" },
+            { "key": "password", "value": "{{basic_pass}}", "type": "string" }
+          ]
+        },
+        "method": "GET",
+        "url": "{{base_url}}/1/get-availabilities/?productId=prod123&fromDateTime=2030-01-01T00:00:00%2B01:00&toDateTime=2030-01-10T23:59:59%2B01:00"
+      }
+    },
+    {
+      "name": "Reserve",
+      "request": {
+        "auth": {
+          "type": "basic",
+          "basic": [
+            { "key": "username", "value": "{{basic_user}}", "type": "string" },
+            { "key": "password", "value": "{{basic_pass}}", "type": "string" }
+          ]
+        },
+        "method": "POST",
+        "header": [{ "key": "content-type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"data\": {\n    \"productId\": \"prod123\",\n    \"dateTime\": \"2030-01-02T10:00:00+01:00\",\n    \"bookingItems\": [{\"category\":\"ADULT\",\"count\":2}],\n    \"gygBookingReference\": \"GYG-REF-1001\"\n  }\n}"
+        },
+        "url": "{{base_url}}/1/reserve/"
+      }
+    },
+    {
+      "name": "Book",
+      "request": {
+        "auth": {
+          "type": "basic",
+          "basic": [
+            { "key": "username", "value": "{{basic_user}}", "type": "string" },
+            { "key": "password", "value": "{{basic_pass}}", "type": "string" }
+          ]
+        },
+        "method": "POST",
+        "header": [{ "key": "content-type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"data\": {\n    \"productId\": \"prod123\",\n    \"reservationReference\": \"res_GYG-REF-1001\",\n    \"gygBookingReference\": \"GYG-REF-1001\",\n    \"currency\": \"EUR\",\n    \"dateTime\": \"2030-01-02T10:00:00+01:00\",\n    \"bookingItems\": [{\"category\":\"ADULT\",\"count\":2,\"retailPrice\":1500}],\n    \"travelers\": [{\"firstName\":\"John\",\"lastName\":\"Smith\",\"email\":\"john@example.com\",\"phoneNumber\":\"+49123456\"}],\n    \"comment\": \"\\n\"\n  }\n}"
+        },
+        "url": "{{base_url}}/1/book/"
+      }
+    }
+  ],
+  "variable": [
+    { "key": "base_url", "value": "http://localhost:3000" },
+    { "key": "basic_user", "value": "gyg_user" },
+    { "key": "basic_pass", "value": "gyg_pass" }
+  ]
+}

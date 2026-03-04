@@ -18,4 +18,4 @@ RUN mkdir -p /app/data
 
 EXPOSE 3000
 
-CMD ["sh", "-c", "npx prisma db push && node dist/server.js"]
+CMD ["sh", "-c", "npx prisma db push && node dist/src/server.js"]

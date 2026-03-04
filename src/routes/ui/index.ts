@@ -149,26 +149,166 @@ const calendarHtml = (id: string) => `<!doctype html><html lang="zh-CN"><head>
 <title>商品日历管理</title>
 <style>
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f5f7fb;margin:0;color:#0f172a}
-.wrap{max-width:980px;margin:24px auto;padding:0 16px}.card{background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:16px;margin-bottom:14px}
-.row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}label{font-size:12px;color:#334155;display:block;margin-bottom:4px}
-input,button{width:100%;box-sizing:border-box;padding:9px 10px;border:1px solid #cbd5e1;border-radius:8px}button{background:#111827;color:#fff;cursor:pointer}
+.wrap{max-width:1060px;margin:24px auto;padding:0 16px}.card{background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:16px;margin-bottom:14px}
+.row{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:10px}label{font-size:12px;color:#334155;display:block;margin-bottom:4px}
+input,button,select{width:100%;box-sizing:border-box;padding:9px 10px;border:1px solid #cbd5e1;border-radius:8px}
+button{background:#111827;color:#fff;cursor:pointer}
+button.secondary{background:#334155}
 .out{white-space:pre-wrap;background:#0f172a;color:#e2e8f0;border-radius:8px;padding:10px;font-size:12px}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{border:1px solid #e5e7eb;padding:8px;text-align:left}
+th{background:#f8fafc}
+.hint{color:#475569;font-size:12px}
 </style></head><body><div class="wrap">
-<div class="card"><h2>商品日历管理</h2><p><a href="/">返回商品列表</a></p><p>product internal id: <b>${id}</b></p>
-<div class="row"><div><label>Admin Token</label><input id="token"/></div><div><label>fromDateTime</label><input id="from" value="2030-01-01T00:00:00+08:00"/></div><div><label>toDateTime</label><input id="to" value="2030-01-31T23:59:59+08:00"/></div></div>
-<div class="row" style="margin-top:10px"><button id="load">查询日历</button><button id="save">写入单个时段</button><div></div></div>
-<div class="row" style="margin-top:10px"><div><label>dateTime</label><input id="dateTime" value="2030-01-10T10:00:00+08:00"/></div><div><label>vacancies</label><input id="vacancies" type="number" value="20"/></div><div><label>adult price</label><input id="price" type="number" value="19900"/></div></div>
+<div class="card">
+  <h2>商品日历管理</h2>
+  <p><a href="/">返回商品列表</a></p>
+  <p>product internal id: <b>${id}</b></p>
+  <div class="row">
+    <div><label>Admin Token</label><input id="token"/></div>
+    <div><label>查询开始日期</label><input id="fromDate" type="date"/></div>
+    <div><label>查询结束日期</label><input id="toDate" type="date"/></div>
+    <div><label>时区偏移</label><input id="tz" value="+08:00"/></div>
+  </div>
+  <div class="row" style="margin-top:10px">
+    <div><button id="load">查询日历</button></div>
+    <div><button id="quick7" class="secondary">近7天</button></div>
+    <div><button id="quick30" class="secondary">近30天</button></div>
+    <div></div>
+  </div>
 </div>
-<div class="card"><div id="out" class="out">Ready</div></div>
+
+<div class="card">
+  <h3>写入价格与库存（支持批量区间）</h3>
+  <div class="row">
+    <div><label>开始日期</label><input id="saveFromDate" type="date"/></div>
+    <div><label>结束日期</label><input id="saveToDate" type="date"/></div>
+    <div><label>开始时间</label><select id="saveTime"></select></div>
+    <div><label>库存 vacancies</label><input id="vacancies" type="number" value="20"/></div>
+  </div>
+  <div class="row" style="margin-top:10px">
+    <div><label>成人价(分)</label><input id="adultPrice" type="number" value="19900"/></div>
+    <div><label>currency</label><input id="currency" value="CNY"/></div>
+    <div><label>cutoffSeconds</label><input id="cutoffSeconds" type="number" value="3600"/></div>
+    <div><label>&nbsp;</label><button id="saveRange">保存到日历</button></div>
+  </div>
+  <p class="hint">说明：如果开始日期=结束日期，就是单天写入；如果不同，会按区间每天写入同一时刻的数据。</p>
+</div>
+
+<div class="card">
+  <h3>已加载日历</h3>
+  <table>
+    <thead><tr><th>Date</th><th>Time</th><th>Vacancies</th><th>Currency</th><th>Adult Price</th></tr></thead>
+    <tbody id="tableBody"></tbody>
+  </table>
+</div>
+
+<div class="card"><h3>输出</h3><div id="out" class="out">Ready</div></div>
 </div>
 <script>
-const out=document.getElementById('out'); const print=(v)=>out.textContent=typeof v==='string'?v:JSON.stringify(v,null,2);
-const tokenEl=document.getElementById('token'); tokenEl.value=localStorage.getItem('admin_token')||''; tokenEl.onchange=()=>localStorage.setItem('admin_token',tokenEl.value.trim());
-async function api(path,opt={}){const token=tokenEl.value.trim();if(!token) throw new Error('缺少 token');const headers=Object.assign({'content-type':'application/json','x-admin-token':token},opt.headers||{});const res=await fetch(path,Object.assign({},opt,{headers}));const t=await res.text();let b;try{b=JSON.parse(t)}catch{b=t}if(!res.ok) throw new Error(JSON.stringify(b));return b;}
+const out=document.getElementById('out');
+const tableBody=document.getElementById('tableBody');
+const print=(v)=>out.textContent=typeof v==='string'?v:JSON.stringify(v,null,2);
+const tokenEl=document.getElementById('token');
+tokenEl.value=localStorage.getItem('admin_token')||'';
+tokenEl.onchange=()=>localStorage.setItem('admin_token',tokenEl.value.trim());
 
-document.getElementById('load').onclick=async()=>{try{const from=document.getElementById('from').value.trim(); const to=document.getElementById('to').value.trim(); const q='?fromDateTime='+encodeURIComponent(from)+'&toDateTime='+encodeURIComponent(to);const data=await api('/admin/products/${id}/availability'+q); print(data);}catch(e){print(String(e));}};
+function pad(v){return String(v).padStart(2,'0');}
+function today(){const d=new Date();return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());}
+function addDays(dateStr, days){const d=new Date(dateStr+'T00:00:00'); d.setDate(d.getDate()+days); return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());}
+function toIso(dateStr,timeStr,tz){return dateStr+'T'+timeStr+':00'+tz;}
+function priceFromRow(row){try{return (row.pricesByCategory&&row.pricesByCategory.retailPrices&&row.pricesByCategory.retailPrices[0]&&row.pricesByCategory.retailPrices[0].price)||'';}catch{return '';}}
+function dateOnly(iso){return (iso||'').slice(0,10);}
+function timeOnly(iso){return (iso||'').slice(11,16);}
 
-document.getElementById('save').onclick=async()=>{try{const payload={availabilities:[{dateTime:document.getElementById('dateTime').value.trim(),cutoffSeconds:3600,vacancies:Number(document.getElementById('vacancies').value),currency:'CNY',pricesByCategory:{retailPrices:[{category:'ADULT',price:Number(document.getElementById('price').value)}]}}]};const data=await api('/admin/products/${id}/availability',{method:'POST',body:JSON.stringify(payload)}); print(data);}catch(e){print(String(e));}};
+async function api(path,opt={}){
+  const token=tokenEl.value.trim();
+  if(!token) throw new Error('缺少 token');
+  const headers=Object.assign({'content-type':'application/json','x-admin-token':token},opt.headers||{});
+  const res=await fetch(path,Object.assign({},opt,{headers}));
+  const t=await res.text(); let b; try{b=JSON.parse(t)}catch{b=t}
+  if(!res.ok) throw new Error(JSON.stringify(b));
+  return b;
+}
+
+function render(rows){
+  tableBody.innerHTML='';
+  (rows||[]).forEach(r=>{
+    const tr=document.createElement('tr');
+    tr.innerHTML='<td>'+dateOnly(r.dateTime)+'</td><td>'+timeOnly(r.dateTime)+'</td><td>'+(r.vacancies??'')+'</td><td>'+(r.currency??'')+'</td><td>'+priceFromRow(r)+'</td>';
+    tableBody.appendChild(tr);
+  });
+}
+
+async function loadCalendar(){
+  const from=document.getElementById('fromDate').value;
+  const to=document.getElementById('toDate').value;
+  const tz=document.getElementById('tz').value.trim()||'+08:00';
+  const fromIso=toIso(from,'00:00',tz);
+  const toIsoStr=toIso(to,'23:59',tz);
+  const q='?fromDateTime='+encodeURIComponent(fromIso)+'&toDateTime='+encodeURIComponent(toIsoStr);
+  const data=await api('/admin/products/${id}/availability'+q);
+  render(data.data||[]);
+  print(data);
+}
+
+function setRange(days){
+  const start=today();
+  document.getElementById('fromDate').value=start;
+  document.getElementById('toDate').value=addDays(start,days-1);
+}
+
+function fillTimeOptions(){
+  const sel=document.getElementById('saveTime');
+  for(let h=0;h<24;h++){
+    for(let m=0;m<60;m+=30){
+      const t=pad(h)+':'+pad(m);
+      const op=document.createElement('option');
+      op.value=t; op.textContent=t; if(t==='10:00') op.selected=true;
+      sel.appendChild(op);
+    }
+  }
+}
+
+function listDates(from,to){
+  const dates=[]; let d=from;
+  while(d<=to){dates.push(d); d=addDays(d,1);}
+  return dates;
+}
+
+async function saveRange(){
+  const from=document.getElementById('saveFromDate').value;
+  const to=document.getElementById('saveToDate').value;
+  const time=document.getElementById('saveTime').value;
+  const tz=document.getElementById('tz').value.trim()||'+08:00';
+  const vacancies=Number(document.getElementById('vacancies').value);
+  const adultPrice=Number(document.getElementById('adultPrice').value);
+  const currency=document.getElementById('currency').value.trim().toUpperCase();
+  const cutoffSeconds=Number(document.getElementById('cutoffSeconds').value);
+  if(!from||!to) throw new Error('请选择开始和结束日期');
+  if(to<from) throw new Error('结束日期不能小于开始日期');
+
+  const dates=listDates(from,to);
+  const payload={availabilities:dates.map(d=>({
+    dateTime:toIso(d,time,tz),
+    cutoffSeconds,
+    vacancies,
+    currency,
+    pricesByCategory:{retailPrices:[{category:'ADULT',price:adultPrice}]}
+  }))};
+  const data=await api('/admin/products/${id}/availability',{method:'POST',body:JSON.stringify(payload)});
+  print(data);
+  await loadCalendar();
+}
+
+setRange(30);
+document.getElementById('saveFromDate').value=today();
+document.getElementById('saveToDate').value=today();
+fillTimeOptions();
+document.getElementById('quick7').onclick=()=>setRange(7);
+document.getElementById('quick30').onclick=()=>setRange(30);
+document.getElementById('load').onclick=()=>loadCalendar().catch(e=>print(String(e)));
+document.getElementById('saveRange').onclick=()=>saveRange().catch(e=>print(String(e)));
 </script></body></html>`;
 
 const uiRoutes: FastifyPluginAsync = async (fastify) => {

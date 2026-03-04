@@ -105,3 +105,7 @@ export const adminBookingsQuerySchema = z.object({
   status: z.enum(['created', 'confirmed', 'cancelled', 'failed']).optional(),
   gygBookingReference: z.string().optional()
 });
+
+export const adminProductsQuerySchema = z.object({
+  supplierId: z.string().optional()
+});

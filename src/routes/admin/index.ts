@@ -6,15 +6,38 @@ import {
   addAvailabilityBodySchema,
   addAvailabilityParamsSchema,
   adminBookingsQuerySchema,
+  adminProductsQuerySchema,
   createProductBodySchema
 } from '../../schemas/admin.js';
+import { adminUiHtml } from './ui.js';
 
 const adminRoutes: FastifyPluginAsync = async (fastify) => {
   const productService = new ProductService(fastify.prisma);
   const availabilityService = new AvailabilityService(fastify.prisma);
   const bookingService = new BookingService(fastify.prisma);
 
+  // UI page itself is public; API actions still require x-admin-token.
+  fastify.get('/ui', async (_request, reply) => {
+    reply.type('text/html; charset=utf-8').send(adminUiHtml);
+  });
+
   fastify.addHook('preHandler', fastify.verifyAdminToken);
+
+  fastify.get(
+    '/products',
+    {
+      schema: {
+        tags: ['Admin'],
+        security: [{ AdminToken: [] }],
+        querystring: adminProductsQuerySchema
+      }
+    },
+    async (request) => {
+      const query = adminProductsQuerySchema.parse(request.query);
+      const products = await productService.listProducts({ supplierId: query.supplierId });
+      return { data: products };
+    }
+  );
 
   fastify.post(
     '/products',

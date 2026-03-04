@@ -64,4 +64,8 @@ export class ProductService {
   listSupplierProducts(supplierId: string) {
     return this.repo.listBySupplierId(supplierId);
   }
+
+  listProducts(filter?: { supplierId?: string }) {
+    return this.repo.listProducts(filter);
+  }
 }

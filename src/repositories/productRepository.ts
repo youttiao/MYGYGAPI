@@ -55,4 +55,13 @@ export class ProductRepository {
       orderBy: { createdAt: 'desc' }
     });
   }
+
+  listProducts(filter?: { supplierId?: string }) {
+    return this.prisma.product.findMany({
+      where: {
+        supplierId: filter?.supplierId
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+  }
 }

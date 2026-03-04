@@ -52,6 +52,8 @@ docker compose up -d --build
 
 ## Admin API
 Header: `x-admin-token: <ADMIN_TOKEN>`
+- `GET /admin/ui` 极简管理页面（页面内再输入 token）
+- `GET /admin/products`
 - `POST /admin/products`
 - `POST /admin/products/:id/availability`
 - `GET /admin/bookings`

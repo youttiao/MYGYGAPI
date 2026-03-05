@@ -269,7 +269,7 @@ th{background:#f8fafc}
     <h4>价格配置</h4>
     <div class="row">
       <div><label>GROUP 价(分)</label><input id="groupPrice" type="number" placeholder="group 产品请填"/></div>
-      <div><label>成人 ADULT 价(分)</label><input id="adultPrice" type="number" value="19900"/></div>
+      <div><label>成人 ADULT 价(分)</label><input id="adultPrice" type="number" placeholder="可留空"/></div>
       <div><label>青年 YOUTH 价(分)</label><input id="youthPrice" type="number" placeholder="可留空"/></div>
       <div><label>儿童 CHILD 价(分)</label><input id="childPrice" type="number" placeholder="可留空"/></div>
     </div>

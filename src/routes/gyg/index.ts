@@ -48,24 +48,39 @@ const gygRoutes: FastifyPluginAsync = async (fastify) => {
       return {
         data: {
           availabilities: availabilities.map((item: any) => {
-            const prices = item.pricesByCategory?.retailPrices;
-            const hasGroupCategory = Array.isArray(prices)
-              ? prices.some((row: any) => row?.category === 'GROUP')
-              : false;
+            const rawPrices = item.pricesByCategory?.retailPrices;
+            const normalizedPrices = Array.isArray(rawPrices)
+              ? rawPrices.filter(
+                  (row: any) =>
+                    row &&
+                    typeof row.category === 'string' &&
+                    typeof row.price === 'number' &&
+                    row.price >= 0
+                )
+              : [];
+            const hasGroupCategory = normalizedPrices.some((row: any) => row.category === 'GROUP');
+            const prices = hasGroupCategory
+              ? normalizedPrices.filter((row: any) => row.category === 'GROUP')
+              : normalizedPrices;
+            const pricesByCategory =
+              prices.length > 0
+                ? {
+                    retailPrices: prices
+                  }
+                : undefined;
+            const openingTimes = Array.isArray(item.openingTimes) ? item.openingTimes : undefined;
+
             const shouldDeriveByCategory =
               !hasGroupCategory &&
               !item.vacanciesByCategory &&
-              Array.isArray(prices) &&
               prices.length > 0 &&
               typeof item.vacancies === 'number';
 
             const derivedVacanciesByCategory = shouldDeriveByCategory
-              ? prices
-                  .filter((row: any) => typeof row?.category === 'string')
-                  .map((row: any) => ({
-                    category: row.category,
-                    vacancies: item.vacancies
-                  }))
+              ? prices.map((row: any) => ({
+                  category: row.category,
+                  vacancies: item.vacancies
+                }))
               : null;
 
             const finalVacanciesByCategory = hasGroupCategory
@@ -76,12 +91,12 @@ const gygRoutes: FastifyPluginAsync = async (fastify) => {
             return {
               productId: item.product.productId,
               dateTime: toGygDateTime(item.dateTime, item.product?.timezone),
-              openingTimes: item.openingTimes,
+              openingTimes,
               cutoffSeconds: item.cutoffSeconds,
               vacancies: includeVacancies ? item.vacancies : undefined,
               vacanciesByCategory: finalVacanciesByCategory,
               currency: item.currency,
-              pricesByCategory: item.pricesByCategory,
+              pricesByCategory,
               tieredPricesByCategory: item.tieredPricesByCategory
             };
           })

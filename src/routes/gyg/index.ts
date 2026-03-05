@@ -71,23 +71,9 @@ const gygRoutes: FastifyPluginAsync = async (fastify) => {
             const openingTimes = Array.isArray(item.openingTimes) ? item.openingTimes : undefined;
             const isTimePeriod = Array.isArray(openingTimes) && openingTimes.length > 0;
 
-            const shouldDeriveByCategory =
-              !isTimePeriod &&
-              !hasGroupCategory &&
-              !item.vacanciesByCategory &&
-              prices.length > 0 &&
-              typeof item.vacancies === 'number';
-
-            const derivedVacanciesByCategory = shouldDeriveByCategory
-              ? prices.map((row: any) => ({
-                  category: row.category,
-                  vacancies: item.vacancies
-                }))
-              : null;
-
             const finalVacanciesByCategory = hasGroupCategory
               ? null
-              : item.vacanciesByCategory ?? derivedVacanciesByCategory;
+              : item.vacanciesByCategory ?? null;
             const includeVacancies = hasGroupCategory || !finalVacanciesByCategory;
 
             return {

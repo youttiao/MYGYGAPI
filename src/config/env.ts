@@ -18,5 +18,8 @@ export const env = {
   adminToken: required('ADMIN_TOKEN', 'admin_dev_token'),
   defaultSupplierId: process.env.DEFAULT_SUPPLIER_ID ?? 'supplier123',
   rateLimitMax: Number(process.env.RATE_LIMIT_MAX ?? 200),
-  rateLimitTimeWindow: process.env.RATE_LIMIT_TIME_WINDOW ?? '1 minute'
+  rateLimitTimeWindow: process.env.RATE_LIMIT_TIME_WINDOW ?? '1 minute',
+  gygApiBaseUrl: process.env.GYG_API_BASE_URL ?? 'https://supplier-api.getyourguide.com/sandbox',
+  gygApiUser: process.env.GYG_API_USER,
+  gygApiPass: process.env.GYG_API_PASS
 };

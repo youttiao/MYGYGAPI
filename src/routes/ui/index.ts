@@ -174,7 +174,7 @@ th{background:#f8fafc}
     <div><button id="load">查询日历</button></div>
     <div><button id="quick7" class="secondary">近7天</button></div>
     <div><button id="quick30" class="secondary">近30天</button></div>
-    <div></div>
+    <div><button id="pushToGyg" class="secondary">推送到 GYG Sandbox</button></div>
   </div>
 </div>
 
@@ -309,6 +309,19 @@ document.getElementById('quick7').onclick=()=>setRange(7);
 document.getElementById('quick30').onclick=()=>setRange(30);
 document.getElementById('load').onclick=()=>loadCalendar().catch(e=>print(String(e)));
 document.getElementById('saveRange').onclick=()=>saveRange().catch(e=>print(String(e)));
+document.getElementById('pushToGyg').onclick=async()=>{
+  try{
+    const from=document.getElementById('fromDate').value;
+    const to=document.getElementById('toDate').value;
+    const tz=document.getElementById('tz').value.trim()||'+08:00';
+    const payload={
+      fromDateTime: toIso(from,'00:00',tz),
+      toDateTime: toIso(to,'23:59',tz)
+    };
+    const data=await api('/admin/products/${id}/push-notify-availability-update',{method:'POST',body:JSON.stringify(payload)});
+    print(data);
+  }catch(e){print(String(e));}
+};
 </script></body></html>`;
 
 const uiRoutes: FastifyPluginAsync = async (fastify) => {

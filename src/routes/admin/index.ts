@@ -2,6 +2,7 @@ import type { FastifyPluginAsync } from 'fastify';
 import { ProductService } from '../../services/productService.js';
 import { AvailabilityService } from '../../services/availabilityService.js';
 import { BookingService } from '../../services/bookingService.js';
+import { GygOutboundService } from '../../services/gygOutboundService.js';
 import {
   addAvailabilityBodySchema,
   addAvailabilityParamsSchema,
@@ -9,6 +10,7 @@ import {
   adminBookingsQuerySchema,
   adminProductParamsSchema,
   adminProductsQuerySchema,
+  adminPushNotifyAvailabilityBodySchema,
   createProductBodySchema
 } from '../../schemas/admin.js';
 
@@ -16,6 +18,7 @@ const adminRoutes: FastifyPluginAsync = async (fastify) => {
   const productService = new ProductService(fastify.prisma);
   const availabilityService = new AvailabilityService(fastify.prisma);
   const bookingService = new BookingService(fastify.prisma);
+  const gygOutboundService = new GygOutboundService();
 
   // Legacy path kept for compatibility.
   fastify.get('/ui', async (_request, reply) => {
@@ -125,6 +128,69 @@ const adminRoutes: FastifyPluginAsync = async (fastify) => {
 
       await availabilityService.upsertProductAvailabilities(params.id, body.availabilities);
       reply.send({ data: { updated: body.availabilities.length } });
+    }
+  );
+
+  fastify.post(
+    '/products/:id/push-notify-availability-update',
+    {
+      schema: {
+        tags: ['Admin'],
+        security: [{ AdminToken: [] }],
+        params: addAvailabilityParamsSchema,
+        body: adminPushNotifyAvailabilityBodySchema
+      }
+    },
+    async (request, reply) => {
+      const params = addAvailabilityParamsSchema.parse(request.params);
+      const body = adminPushNotifyAvailabilityBodySchema.parse(request.body);
+
+      const product = await productService.getProductById(params.id);
+      if (!product) {
+        reply.code(404).send({ error: 'Product not found' });
+        return;
+      }
+
+      const rows = await availabilityService.getAvailabilitiesByInternalProduct(
+        params.id,
+        body.fromDateTime,
+        body.toDateTime
+      );
+
+      const mapped = rows.map((row) => ({
+        dateTime: row.dateTime.toISOString(),
+        openingTimes: row.openingTimes,
+        vacancies: row.vacancies,
+        vacanciesByCategory: row.vacanciesByCategory,
+        cutoffSeconds: row.cutoffSeconds,
+        currency: row.currency,
+        pricesByCategory: row.pricesByCategory,
+        tieredPricesByCategory: row.tieredPricesByCategory
+      }));
+
+      if (mapped.length === 0) {
+        reply.code(400).send({
+          error: 'No availabilities found in selected range'
+        });
+        return;
+      }
+
+      const result = await gygOutboundService.notifyAvailabilityUpdate({
+        productId: product.productId,
+        availabilities: mapped
+      });
+
+      return {
+        data: {
+          request: {
+            productId: product.productId,
+            pushedAvailabilities: mapped.length,
+            fromDateTime: body.fromDateTime,
+            toDateTime: body.toDateTime
+          },
+          gygResponse: result
+        }
+      };
     }
   );
 

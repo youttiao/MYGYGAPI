@@ -118,3 +118,8 @@ export const adminAvailabilityQuerySchema = z.object({
   fromDateTime: z.string().datetime({ offset: true }).optional(),
   toDateTime: z.string().datetime({ offset: true }).optional()
 });
+
+export const adminPushNotifyAvailabilityBodySchema = z.object({
+  fromDateTime: z.string().datetime({ offset: true }),
+  toDateTime: z.string().datetime({ offset: true })
+});

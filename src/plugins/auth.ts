@@ -36,7 +36,11 @@ const authPlugin: FastifyPluginAsync = async (fastify) => {
 
     const username = decoded.slice(0, splitIndex);
     const password = decoded.slice(splitIndex + 1);
-    if (username !== env.basicAuthUser || password !== env.basicAuthPass) {
+    const primaryMatch = username === env.basicAuthUser && password === env.basicAuthPass;
+    const secondaryConfigured = Boolean(env.basicAuthUser2 && env.basicAuthPass2);
+    const secondaryMatch =
+      secondaryConfigured && username === env.basicAuthUser2 && password === env.basicAuthPass2;
+    if (!primaryMatch && !secondaryMatch) {
       unauthorized(reply);
       return;
     }

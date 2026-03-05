@@ -15,6 +15,8 @@ export const env = {
   databaseUrl: required('DATABASE_URL', 'file:./dev.db'),
   basicAuthUser: required('BASIC_AUTH_USER', 'gyg_user'),
   basicAuthPass: required('BASIC_AUTH_PASS', 'gyg_pass'),
+  basicAuthUser2: process.env.BASIC_AUTH_USER_2,
+  basicAuthPass2: process.env.BASIC_AUTH_PASS_2,
   adminToken: required('ADMIN_TOKEN', 'admin_dev_token'),
   defaultSupplierId: process.env.DEFAULT_SUPPLIER_ID ?? 'supplier123',
   rateLimitMax: Number(process.env.RATE_LIMIT_MAX ?? 200),

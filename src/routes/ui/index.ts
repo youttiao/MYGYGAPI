@@ -188,7 +188,13 @@ th{background:#f8fafc}
     <div><label>库存 vacancies</label><input id="vacancies" type="number" value="20"/></div>
   </div>
   <div class="row" style="margin-top:10px">
-    <div><label>成人价(分)</label><input id="adultPrice" type="number" value="19900"/></div>
+    <div><label>成人 ADULT 价(分)</label><input id="adultPrice" type="number" value="19900"/></div>
+    <div><label>儿童 CHILD 价(分)</label><input id="childPrice" type="number" placeholder="可留空"/></div>
+    <div><label>婴儿 INFANT 价(分)</label><input id="infantPrice" type="number" placeholder="可留空"/></div>
+    <div><label>老人 SENIOR 价(分)</label><input id="seniorPrice" type="number" placeholder="可留空"/></div>
+  </div>
+  <div class="row" style="margin-top:10px">
+    <div><label>学生 STUDENT 价(分)</label><input id="studentPrice" type="number" placeholder="可留空"/></div>
     <div><label>currency</label><input id="currency" value="CNY"/></div>
     <div><label>cutoffSeconds</label><input id="cutoffSeconds" type="number" value="3600"/></div>
     <div><label>&nbsp;</label><button id="saveRange">保存到日历</button></div>
@@ -199,7 +205,7 @@ th{background:#f8fafc}
 <div class="card">
   <h3>已加载日历</h3>
   <table>
-    <thead><tr><th>Date</th><th>Time</th><th>Vacancies</th><th>Currency</th><th>Adult Price</th></tr></thead>
+    <thead><tr><th>Date</th><th>Time</th><th>Vacancies</th><th>Currency</th><th>Prices By Category</th></tr></thead>
     <tbody id="tableBody"></tbody>
   </table>
 </div>
@@ -218,7 +224,12 @@ function pad(v){return String(v).padStart(2,'0');}
 function today(){const d=new Date();return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());}
 function addDays(dateStr, days){const d=new Date(dateStr+'T00:00:00'); d.setDate(d.getDate()+days); return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());}
 function toIso(dateStr,timeStr,tz){return dateStr+'T'+timeStr+':00'+tz;}
-function priceFromRow(row){try{return (row.pricesByCategory&&row.pricesByCategory.retailPrices&&row.pricesByCategory.retailPrices[0]&&row.pricesByCategory.retailPrices[0].price)||'';}catch{return '';}}
+function pricesTextFromRow(row){
+  try{
+    const prices = row.pricesByCategory && row.pricesByCategory.retailPrices ? row.pricesByCategory.retailPrices : [];
+    return prices.map(p=>p.category+':'+p.price).join(' | ');
+  }catch{return '';}
+}
 function dateOnly(iso){return (iso||'').slice(0,10);}
 function timeOnly(iso){return (iso||'').slice(11,16);}
 
@@ -236,7 +247,7 @@ function render(rows){
   tableBody.innerHTML='';
   (rows||[]).forEach(r=>{
     const tr=document.createElement('tr');
-    tr.innerHTML='<td>'+dateOnly(r.dateTime)+'</td><td>'+timeOnly(r.dateTime)+'</td><td>'+(r.vacancies??'')+'</td><td>'+(r.currency??'')+'</td><td>'+priceFromRow(r)+'</td>';
+    tr.innerHTML='<td>'+dateOnly(r.dateTime)+'</td><td>'+timeOnly(r.dateTime)+'</td><td>'+(r.vacancies??'')+'</td><td>'+(r.currency??'')+'</td><td>'+pricesTextFromRow(r)+'</td>';
     tableBody.appendChild(tr);
   });
 }
@@ -273,12 +284,22 @@ async function saveRange(){
   const tz=document.getElementById('tz').value.trim()||'+08:00';
   const vacancies=Number(document.getElementById('vacancies').value);
   const adultPrice=Number(document.getElementById('adultPrice').value);
+  const childPriceRaw=document.getElementById('childPrice').value.trim();
+  const infantPriceRaw=document.getElementById('infantPrice').value.trim();
+  const seniorPriceRaw=document.getElementById('seniorPrice').value.trim();
+  const studentPriceRaw=document.getElementById('studentPrice').value.trim();
   const currency=document.getElementById('currency').value.trim().toUpperCase();
   const cutoffSeconds=Number(document.getElementById('cutoffSeconds').value);
   if(!from||!to) throw new Error('请选择开始和结束日期');
   if(to<from) throw new Error('结束日期不能小于开始日期');
   if(times.length===0) throw new Error('请填写至少一个开始时间');
   if(times.some(t=>!/^\\d{2}:\\d{2}$/.test(t))) throw new Error('时间格式应为 HH:MM，例如 10:00,14:00');
+
+  const retailPrices=[{category:'ADULT',price:adultPrice}];
+  if(childPriceRaw!=='') retailPrices.push({category:'CHILD',price:Number(childPriceRaw)});
+  if(infantPriceRaw!=='') retailPrices.push({category:'INFANT',price:Number(infantPriceRaw)});
+  if(seniorPriceRaw!=='') retailPrices.push({category:'SENIOR',price:Number(seniorPriceRaw)});
+  if(studentPriceRaw!=='') retailPrices.push({category:'STUDENT',price:Number(studentPriceRaw)});
 
   const dates=listDates(from,to);
   const all=[];
@@ -287,7 +308,7 @@ async function saveRange(){
     cutoffSeconds,
     vacancies,
     currency,
-    pricesByCategory:{retailPrices:[{category:'ADULT',price:adultPrice}]}
+    pricesByCategory:{retailPrices}
   })));
   const payload={availabilities:all};
   const data=await api('/admin/products/${id}/availability',{method:'POST',body:JSON.stringify(payload)});

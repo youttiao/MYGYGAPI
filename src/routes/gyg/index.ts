@@ -69,8 +69,10 @@ const gygRoutes: FastifyPluginAsync = async (fastify) => {
                   }
                 : undefined;
             const openingTimes = Array.isArray(item.openingTimes) ? item.openingTimes : undefined;
+            const isTimePeriod = Array.isArray(openingTimes) && openingTimes.length > 0;
 
             const shouldDeriveByCategory =
+              !isTimePeriod &&
               !hasGroupCategory &&
               !item.vacanciesByCategory &&
               prices.length > 0 &&

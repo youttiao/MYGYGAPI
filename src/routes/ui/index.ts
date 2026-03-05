@@ -164,6 +164,7 @@ th{background:#f8fafc}
   <h2>商品日历管理</h2>
   <p><a href="/">返回商品列表</a></p>
   <p>product internal id: <b>${id}</b></p>
+  <p>product external id: <b id="externalProductId">loading...</b></p>
   <div class="row">
     <div><label>Admin Token</label><input id="token"/></div>
     <div><label>查询开始日期</label><input id="fromDate" type="date"/></div>
@@ -183,7 +184,7 @@ th{background:#f8fafc}
   <div class="row">
     <div><label>开始日期</label><input id="saveFromDate" type="date"/></div>
     <div><label>结束日期</label><input id="saveToDate" type="date"/></div>
-    <div><label>开始时间</label><select id="saveTime"></select></div>
+    <div><label>开始时间(可多时段，逗号分隔)</label><input id="saveTimes" value="10:00,14:00"/></div>
     <div><label>库存 vacancies</label><input id="vacancies" type="number" value="20"/></div>
   </div>
   <div class="row" style="margin-top:10px">
@@ -258,18 +259,6 @@ function setRange(days){
   document.getElementById('toDate').value=addDays(start,days-1);
 }
 
-function fillTimeOptions(){
-  const sel=document.getElementById('saveTime');
-  for(let h=0;h<24;h++){
-    for(let m=0;m<60;m+=30){
-      const t=pad(h)+':'+pad(m);
-      const op=document.createElement('option');
-      op.value=t; op.textContent=t; if(t==='10:00') op.selected=true;
-      sel.appendChild(op);
-    }
-  }
-}
-
 function listDates(from,to){
   const dates=[]; let d=from;
   while(d<=to){dates.push(d); d=addDays(d,1);}
@@ -279,7 +268,8 @@ function listDates(from,to){
 async function saveRange(){
   const from=document.getElementById('saveFromDate').value;
   const to=document.getElementById('saveToDate').value;
-  const time=document.getElementById('saveTime').value;
+  const timesRaw=document.getElementById('saveTimes').value.trim();
+  const times=timesRaw.split(',').map(s=>s.trim()).filter(Boolean);
   const tz=document.getElementById('tz').value.trim()||'+08:00';
   const vacancies=Number(document.getElementById('vacancies').value);
   const adultPrice=Number(document.getElementById('adultPrice').value);
@@ -287,15 +277,19 @@ async function saveRange(){
   const cutoffSeconds=Number(document.getElementById('cutoffSeconds').value);
   if(!from||!to) throw new Error('请选择开始和结束日期');
   if(to<from) throw new Error('结束日期不能小于开始日期');
+  if(times.length===0) throw new Error('请填写至少一个开始时间');
+  if(times.some(t=>!/^\\d{2}:\\d{2}$/.test(t))) throw new Error('时间格式应为 HH:MM，例如 10:00,14:00');
 
   const dates=listDates(from,to);
-  const payload={availabilities:dates.map(d=>({
-    dateTime:toIso(d,time,tz),
+  const all=[];
+  dates.forEach(d=>times.forEach(t=>all.push({
+    dateTime:toIso(d,t,tz),
     cutoffSeconds,
     vacancies,
     currency,
     pricesByCategory:{retailPrices:[{category:'ADULT',price:adultPrice}]}
-  }))};
+  })));
+  const payload={availabilities:all};
   const data=await api('/admin/products/${id}/availability',{method:'POST',body:JSON.stringify(payload)});
   print(data);
   await loadCalendar();
@@ -304,7 +298,9 @@ async function saveRange(){
 setRange(30);
 document.getElementById('saveFromDate').value=today();
 document.getElementById('saveToDate').value=today();
-fillTimeOptions();
+api('/admin/products/${id}')
+  .then((res)=>{document.getElementById('externalProductId').textContent = res.data?.productId || 'N/A';})
+  .catch(()=>{document.getElementById('externalProductId').textContent = 'N/A';});
 document.getElementById('quick7').onclick=()=>setRange(7);
 document.getElementById('quick30').onclick=()=>setRange(30);
 document.getElementById('load').onclick=()=>loadCalendar().catch(e=>print(String(e)));

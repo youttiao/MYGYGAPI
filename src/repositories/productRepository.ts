@@ -64,4 +64,13 @@ export class ProductRepository {
       orderBy: { createdAt: 'desc' }
     });
   }
+
+  updateSettings(id: string, settings: { autoCloseHours: number }) {
+    return this.prisma.product.update({
+      where: { id },
+      data: {
+        autoCloseHours: settings.autoCloseHours
+      }
+    });
+  }
 }

@@ -20,6 +20,7 @@ model Product {
   destinationCountry String           @default("DEU")
   participantsMin    Int?             @default(1)
   participantsMax    Int?             @default(999)
+  autoCloseHours     Int              @default(0)
   availabilities     Availability[]
   pricingCategories  PricingCategory[]
   addons             ProductAddon[]

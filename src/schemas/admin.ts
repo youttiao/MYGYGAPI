@@ -12,6 +12,7 @@ export const createProductBodySchema = z.object({
   destinationCountry: z.string().length(3).default('DEU'),
   participantsMin: z.number().int().positive().optional(),
   participantsMax: z.number().int().positive().optional(),
+  autoCloseHours: z.number().int().nonnegative().optional(),
   pricingCategories: z
     .array(
       z.object({
@@ -122,4 +123,13 @@ export const adminAvailabilityQuerySchema = z.object({
 export const adminPushNotifyAvailabilityBodySchema = z.object({
   fromDateTime: z.string().datetime({ offset: true }),
   toDateTime: z.string().datetime({ offset: true })
+});
+
+export const adminAvailabilityDeleteParamsSchema = z.object({
+  id: z.string().min(1),
+  availabilityId: z.string().min(1)
+});
+
+export const adminProductSettingsBodySchema = z.object({
+  autoCloseHours: z.number().int().nonnegative()
 });

@@ -78,4 +78,30 @@ export class AvailabilityRepository {
       orderBy: { dateTime: 'asc' }
     });
   }
+
+  deleteById(productId: string, availabilityId: string) {
+    return this.prisma.availability.deleteMany({
+      where: {
+        id: availabilityId,
+        productId
+      }
+    });
+  }
+
+  autoCloseByProduct(productId: string, threshold: Date) {
+    return this.prisma.availability.updateMany({
+      where: {
+        productId,
+        dateTime: {
+          lte: threshold
+        },
+        vacancies: {
+          gt: 0
+        }
+      },
+      data: {
+        vacancies: 0
+      }
+    });
+  }
 }

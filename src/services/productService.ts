@@ -20,6 +20,7 @@ export class ProductService {
     destinationCountry: string;
     participantsMin?: number;
     participantsMax?: number;
+    autoCloseHours?: number;
     pricingCategories?: Array<{
       category: string;
       minTicketAmount?: number | null;
@@ -50,7 +51,8 @@ export class ProductService {
         destinationCity: input.destinationCity,
         destinationCountry: input.destinationCountry,
         participantsMin: input.participantsMin,
-        participantsMax: input.participantsMax
+        participantsMax: input.participantsMax,
+        autoCloseHours: input.autoCloseHours ?? 0
       },
       pricingCategories: input.pricingCategories,
       addons: input.addons
@@ -71,5 +73,9 @@ export class ProductService {
 
   listProducts(filter?: { supplierId?: string }) {
     return this.repo.listProducts(filter);
+  }
+
+  updateProductSettings(id: string, settings: { autoCloseHours: number }) {
+    return this.repo.updateSettings(id, settings);
   }
 }

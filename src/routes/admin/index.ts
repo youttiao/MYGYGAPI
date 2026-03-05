@@ -8,6 +8,8 @@ import {
   addAvailabilityParamsSchema,
   adminAvailabilityQuerySchema,
   adminBookingsQuerySchema,
+  adminAvailabilityDeleteParamsSchema,
+  adminProductSettingsBodySchema,
   adminProductParamsSchema,
   adminProductsQuerySchema,
   adminPushNotifyAvailabilityBodySchema,
@@ -79,6 +81,31 @@ const adminRoutes: FastifyPluginAsync = async (fastify) => {
     }
   );
 
+  fastify.patch(
+    '/products/:id/settings',
+    {
+      schema: {
+        tags: ['Admin'],
+        security: [{ AdminToken: [] }],
+        params: adminProductParamsSchema,
+        body: adminProductSettingsBodySchema
+      }
+    },
+    async (request, reply) => {
+      const params = adminProductParamsSchema.parse(request.params);
+      const body = adminProductSettingsBodySchema.parse(request.body);
+      const product = await productService.getProductById(params.id);
+      if (!product) {
+        reply.code(404).send({ error: 'Product not found' });
+        return;
+      }
+      const updated = await productService.updateProductSettings(params.id, {
+        autoCloseHours: body.autoCloseHours
+      });
+      return { data: updated };
+    }
+  );
+
   fastify.get(
     '/products/:id/availability',
     {
@@ -128,6 +155,27 @@ const adminRoutes: FastifyPluginAsync = async (fastify) => {
 
       await availabilityService.upsertProductAvailabilities(params.id, body.availabilities);
       reply.send({ data: { updated: body.availabilities.length } });
+    }
+  );
+
+  fastify.delete(
+    '/products/:id/availability/:availabilityId',
+    {
+      schema: {
+        tags: ['Admin'],
+        security: [{ AdminToken: [] }],
+        params: adminAvailabilityDeleteParamsSchema
+      }
+    },
+    async (request, reply) => {
+      const params = adminAvailabilityDeleteParamsSchema.parse(request.params);
+      const product = await productService.getProductById(params.id);
+      if (!product) {
+        reply.code(404).send({ error: 'Product not found' });
+        return;
+      }
+      const result = await availabilityService.deleteAvailability(params.id, params.availabilityId);
+      return { data: { deleted: result.count } };
     }
   );
 

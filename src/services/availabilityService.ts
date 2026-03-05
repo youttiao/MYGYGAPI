@@ -47,4 +47,16 @@ export class AvailabilityService {
   ) {
     return this.repo.findByProductIdRange(productId, new Date(fromDateTime), new Date(toDateTime));
   }
+
+  async deleteAvailability(productId: string, availabilityId: string) {
+    return this.repo.deleteById(productId, availabilityId);
+  }
+
+  async autoCloseByProductHours(productId: string, autoCloseHours: number) {
+    if (autoCloseHours <= 0) {
+      return { count: 0 };
+    }
+    const threshold = new Date(Date.now() + autoCloseHours * 3600 * 1000);
+    return this.repo.autoCloseByProduct(productId, threshold);
+  }
 }

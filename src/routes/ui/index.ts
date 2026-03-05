@@ -204,8 +204,14 @@ th{background:#f8fafc}
 
 <div class="card">
   <h3>已加载日历</h3>
+  <div class="row" style="margin-bottom:10px">
+    <div><label>自动关闭(提前小时)</label><input id="autoCloseHours" type="number" min="0" value="0"/></div>
+    <div><label>&nbsp;</label><button id="saveAutoClose" class="secondary">保存自动关闭设置</button></div>
+    <div></div>
+    <div></div>
+  </div>
   <table>
-    <thead><tr><th>Date</th><th>Time</th><th>Vacancies</th><th>Currency</th><th>Prices By Category</th></tr></thead>
+    <thead><tr><th>Date</th><th>Time</th><th>Vacancies</th><th>Currency</th><th>Prices By Category</th><th>操作</th></tr></thead>
     <tbody id="tableBody"></tbody>
   </table>
 </div>
@@ -247,8 +253,18 @@ function render(rows){
   tableBody.innerHTML='';
   (rows||[]).forEach(r=>{
     const tr=document.createElement('tr');
-    tr.innerHTML='<td>'+dateOnly(r.dateTime)+'</td><td>'+timeOnly(r.dateTime)+'</td><td>'+(r.vacancies??'')+'</td><td>'+(r.currency??'')+'</td><td>'+pricesTextFromRow(r)+'</td>';
+    tr.innerHTML='<td>'+dateOnly(r.dateTime)+'</td><td>'+timeOnly(r.dateTime)+'</td><td>'+(r.vacancies??'')+'</td><td>'+(r.currency??'')+'</td><td>'+pricesTextFromRow(r)+'</td><td><button data-del=\"'+r.id+'\" class=\"secondary\">删除</button></td>';
     tableBody.appendChild(tr);
+  });
+  Array.from(document.querySelectorAll('button[data-del]')).forEach((btn)=>{
+    btn.onclick=async()=>{
+      try{
+        const availabilityId=btn.getAttribute('data-del');
+        if(!availabilityId) throw new Error('availabilityId missing');
+        await api('/admin/products/${id}/availability/'+encodeURIComponent(availabilityId),{method:'DELETE'});
+        await loadCalendar();
+      }catch(e){print(String(e));}
+    };
   });
 }
 
@@ -320,12 +336,22 @@ setRange(30);
 document.getElementById('saveFromDate').value=today();
 document.getElementById('saveToDate').value=today();
 api('/admin/products/${id}')
-  .then((res)=>{document.getElementById('externalProductId').textContent = res.data?.productId || 'N/A';})
+  .then((res)=>{
+    document.getElementById('externalProductId').textContent = res.data?.productId || 'N/A';
+    document.getElementById('autoCloseHours').value = String(res.data?.autoCloseHours ?? 0);
+  })
   .catch(()=>{document.getElementById('externalProductId').textContent = 'N/A';});
 document.getElementById('quick7').onclick=()=>setRange(7);
 document.getElementById('quick30').onclick=()=>setRange(30);
 document.getElementById('load').onclick=()=>loadCalendar().catch(e=>print(String(e)));
 document.getElementById('saveRange').onclick=()=>saveRange().catch(e=>print(String(e)));
+document.getElementById('saveAutoClose').onclick=async()=>{
+  try{
+    const autoCloseHours=Number(document.getElementById('autoCloseHours').value||0);
+    const data=await api('/admin/products/${id}/settings',{method:'PATCH',body:JSON.stringify({autoCloseHours})});
+    print(data);
+  }catch(e){print(String(e));}
+};
 document.getElementById('pushToGyg').onclick=async()=>{
   try{
     const from=document.getElementById('fromDate').value;

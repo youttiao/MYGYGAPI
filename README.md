@@ -63,6 +63,8 @@ Header: `x-admin-token: <ADMIN_TOKEN>`
 - `GET /admin/products/:id/availability`
 - `POST /admin/products`
 - `POST /admin/products/:id/availability`
+- `DELETE /admin/products/:id/availability/:availabilityId`
+- `PATCH /admin/products/:id/settings`（`autoCloseHours` 提前关闭小时数）
 - `POST /admin/products/:id/push-notify-availability-update`（Supplier -> GYG）
 - `GET /admin/bookings`
 

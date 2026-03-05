@@ -9,7 +9,7 @@ services:
       DATABASE_URL: file:/app/data/dev.db
       BASIC_AUTH_USER: gyg_user
       BASIC_AUTH_PASS: gyg_pass
-      ADMIN_TOKEN: admin_dev_token
+      ADMIN_TOKEN: xuran123
       DEFAULT_SUPPLIER_ID: supplier123
     ports:
       - '3000:3000'

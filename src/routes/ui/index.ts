@@ -491,13 +491,21 @@ async function saveRange(){
 
   const dates=listDates(from,to);
   const all=[];
+  const hasGroupPrice=retailPrices.some((p)=>p.category==='GROUP');
+  const individualCategories=retailPrices
+    .filter((p)=>p.category!=='GROUP')
+    .map((p)=>p.category);
+  const vacanciesByCategoryPayload=individualCategories.length>0
+    ? individualCategories.map((category)=>({category,vacancies}))
+    : undefined;
   if(mode==='time_period'){
     const openingTimes=openingRanges.map((r)=>{const [fromTime,toTime]=r.split('-'); return {fromTime,toTime};});
     dates.forEach(d=>all.push({
       dateTime:toIso(d,'00:00',tz),
       openingTimes,
       cutoffSeconds,
-      vacancies,
+      vacancies: hasGroupPrice && !vacanciesByCategoryPayload ? vacancies : undefined,
+      vacanciesByCategory: vacanciesByCategoryPayload,
       currency,
       pricesByCategory:{retailPrices}
     }));
@@ -505,7 +513,8 @@ async function saveRange(){
     dates.forEach(d=>times.forEach(t=>all.push({
       dateTime:toIso(d,t,tz),
       cutoffSeconds,
-      vacancies,
+      vacancies: hasGroupPrice && !vacanciesByCategoryPayload ? vacancies : undefined,
+      vacanciesByCategory: vacanciesByCategoryPayload,
       currency,
       pricesByCategory:{retailPrices}
     })));

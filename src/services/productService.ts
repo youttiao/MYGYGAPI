@@ -75,7 +75,16 @@ export class ProductService {
     return this.repo.listProducts(filter);
   }
 
-  updateProductSettings(id: string, settings: { autoCloseHours: number }) {
+  updateProductSettings(
+    id: string,
+    settings: {
+      autoCloseHours?: number;
+      participantsMin?: number;
+      participantsMax?: number;
+      groupSizeMin?: number;
+      groupSizeMax?: number;
+    }
+  ) {
     return this.repo.updateSettings(id, settings);
   }
 }

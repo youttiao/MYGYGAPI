@@ -42,6 +42,30 @@ export class BookingRepository {
     });
   }
 
+  updateReservationByGygBookingReference(
+    gygBookingReference: string,
+    params: {
+      reservationReference: string;
+      dateTime: Date;
+      bookingItems: unknown;
+      expiresAt: Date;
+      status: string;
+      rawPayload: unknown;
+    }
+  ) {
+    return this.prisma.reservation.update({
+      where: { gygBookingReference },
+      data: {
+        reservationReference: params.reservationReference,
+        dateTime: params.dateTime,
+        bookingItems: params.bookingItems as any,
+        expiresAt: params.expiresAt,
+        status: params.status,
+        rawPayload: params.rawPayload as any
+      }
+    });
+  }
+
   createBooking(params: {
     bookingReference: string;
     gygBookingReference: string;
@@ -100,6 +124,42 @@ export class BookingRepository {
     return this.prisma.booking.update({
       where: { bookingReference },
       data: { status }
+    });
+  }
+
+  updateBookingByGygBookingReference(
+    gygBookingReference: string,
+    params: {
+      bookingReference: string;
+      reservationId: string;
+      dateTime: Date;
+      currency: string;
+      bookingItems: unknown;
+      addonItems?: unknown;
+      language?: string;
+      travelers: unknown;
+      travelerHotel?: string;
+      comment: string;
+      tickets: unknown;
+      rawPayload: unknown;
+    }
+  ) {
+    return this.prisma.booking.update({
+      where: { gygBookingReference },
+      data: {
+        bookingReference: params.bookingReference,
+        reservationId: params.reservationId,
+        dateTime: params.dateTime,
+        currency: params.currency,
+        bookingItems: params.bookingItems as any,
+        addonItems: params.addonItems as any,
+        language: params.language,
+        travelers: params.travelers as any,
+        travelerHotel: params.travelerHotel,
+        comment: params.comment,
+        tickets: params.tickets as any,
+        rawPayload: params.rawPayload as any
+      }
     });
   }
 

@@ -1,6 +1,4 @@
 import fp from 'fastify-plugin';
-import basicAuth from '@fastify/basic-auth';
-import rateLimit from '@fastify/rate-limit';
 import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from 'fastify';
 import { env } from '../config/env.js';
 
@@ -12,27 +10,36 @@ function unauthorized(reply: FastifyReply): void {
 }
 
 const authPlugin: FastifyPluginAsync = async (fastify) => {
-  await fastify.register(rateLimit, {
-    max: env.rateLimitMax,
-    timeWindow: env.rateLimitTimeWindow
-  });
-
-  await fastify.register(basicAuth, {
-    validate: async (username, password, _request, reply) => {
-      if (username !== env.basicAuthUser || password !== env.basicAuthPass) {
-        unauthorized(reply);
-        return;
-      }
-    },
-    authenticate: true
-  });
-
   fastify.decorate('verifyGygBasicAuth', async function verifyGygBasicAuth(
     request: FastifyRequest,
     reply: FastifyReply
   ) {
-    await (request as any).rateLimit();
-    await (fastify as any).basicAuth(request, reply);
+    const authHeader = request.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Basic ')) {
+      unauthorized(reply);
+      return;
+    }
+
+    let decoded = '';
+    try {
+      decoded = Buffer.from(authHeader.slice(6), 'base64').toString('utf-8');
+    } catch {
+      unauthorized(reply);
+      return;
+    }
+
+    const splitIndex = decoded.indexOf(':');
+    if (splitIndex < 0) {
+      unauthorized(reply);
+      return;
+    }
+
+    const username = decoded.slice(0, splitIndex);
+    const password = decoded.slice(splitIndex + 1);
+    if (username !== env.basicAuthUser || password !== env.basicAuthPass) {
+      unauthorized(reply);
+      return;
+    }
   });
 
   fastify.decorate('verifyAdminToken', async function verifyAdminToken(

@@ -29,6 +29,7 @@ export async function buildApp(): Promise<FastifyInstance> {
   app.addHook('onRequest', async (request) => {
     request.requestIdValue = request.headers['x-request-id']?.toString() ?? request.id;
     request.correlationId = request.headers['x-correlation-id']?.toString();
+    request.auditStartedAt = Date.now();
     request.log.info(
       {
         requestId: request.requestIdValue,
@@ -43,6 +44,72 @@ export async function buildApp(): Promise<FastifyInstance> {
   await app.register(prismaPlugin);
   await app.register(authPlugin);
   await app.register(openapiPlugin);
+
+  app.addHook('onSend', async (request, _reply, payload) => {
+    if (!request.url.startsWith('/1/')) {
+      return payload;
+    }
+
+    try {
+      if (typeof payload === 'string') {
+        request.auditResponseBody = JSON.parse(payload);
+      } else {
+        request.auditResponseBody = payload as unknown;
+      }
+    } catch {
+      request.auditResponseBody = {
+        raw: typeof payload === 'string' ? payload.slice(0, 2000) : String(payload)
+      };
+    }
+    return payload;
+  });
+
+  app.addHook('onResponse', async (request, reply) => {
+    if (!request.url.startsWith('/1/')) {
+      return;
+    }
+
+    const startedAt = request.auditStartedAt ?? Date.now();
+    const durationMs = Date.now() - startedAt;
+    const ip =
+      request.headers['x-forwarded-for']?.toString().split(',')[0]?.trim() ??
+      request.ip ??
+      undefined;
+    const userAgent = request.headers['user-agent']?.toString();
+
+    const sanitizeBody = (value: unknown): unknown => {
+      if (value === null || value === undefined) {
+        return undefined;
+      }
+      if (typeof value === 'string') {
+        return value.length > 2000 ? `${value.slice(0, 2000)}...[truncated]` : value;
+      }
+      return value;
+    };
+
+    try {
+      await app.prisma.httpAccessLog.create({
+        data: {
+          direction: 'INBOUND',
+          source: 'GYG',
+          method: request.method,
+          path: request.url.split('?')[0],
+          statusCode: reply.statusCode,
+          requestId: request.requestIdValue,
+          correlationId: request.correlationId,
+          ip,
+          userAgent,
+          durationMs,
+          requestBody: sanitizeBody(
+            request.method === 'GET' ? (request.query as unknown) : (request.body as unknown)
+          ) as any,
+          responseBody: sanitizeBody(request.auditResponseBody) as any
+        }
+      });
+    } catch (error) {
+      request.log.error({ err: error }, 'http_access_log_write_failed');
+    }
+  });
 
   const autoCloseService = new AutoCloseService(app.prisma, app.log);
   autoCloseService.start();

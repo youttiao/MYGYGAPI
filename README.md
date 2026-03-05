@@ -58,9 +58,11 @@ Header: `x-admin-token: <ADMIN_TOKEN>`
 - `GET /` 商品管理首页（商品列表、创建、跳转日历）
 - `GET /products/:id/calendar` 单商品日历管理页面
 - `GET /gyg-bookings` GYG bookings 管理页面
+- `GET /integration-logs` GYG 访问日志页面
 - `GET /admin/products`
 - `GET /admin/products/:id`
 - `GET /admin/products/:id/availability`
+- `GET /admin/access-logs` 访问日志查询（支持 source/path/statusCode/limit）
 - `POST /admin/products`
 - `POST /admin/products/:id/availability`
 - `DELETE /admin/products/:id/availability/:availabilityId`

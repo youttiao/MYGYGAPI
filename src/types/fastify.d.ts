@@ -5,6 +5,8 @@ declare module 'fastify' {
   interface FastifyRequest {
     requestIdValue?: string;
     correlationId?: string;
+    auditStartedAt?: number;
+    auditResponseBody?: unknown;
   }
 
   interface FastifyInstance {

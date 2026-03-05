@@ -2,6 +2,7 @@ import type { FastifyPluginAsync } from 'fastify';
 import { AvailabilityService } from '../../services/availabilityService.js';
 import { BookingService } from '../../services/bookingService.js';
 import { ProductService } from '../../services/productService.js';
+import { toGygDateTime } from '../../lib/dateTime.js';
 import {
   bookRequestSchema,
   cancelBookingRequestSchema,
@@ -46,17 +47,44 @@ const gygRoutes: FastifyPluginAsync = async (fastify) => {
 
       return {
         data: {
-          availabilities: availabilities.map((item: any) => ({
-            productId: item.product.productId,
-            dateTime: item.dateTime.toISOString(),
-            openingTimes: item.openingTimes,
-            cutoffSeconds: item.cutoffSeconds,
-            vacancies: item.vacancies,
-            vacanciesByCategory: item.vacanciesByCategory,
-            currency: item.currency,
-            pricesByCategory: item.pricesByCategory,
-            tieredPricesByCategory: item.tieredPricesByCategory
-          }))
+          availabilities: availabilities.map((item: any) => {
+            const prices = item.pricesByCategory?.retailPrices;
+            const hasGroupCategory = Array.isArray(prices)
+              ? prices.some((row: any) => row?.category === 'GROUP')
+              : false;
+            const shouldDeriveByCategory =
+              !hasGroupCategory &&
+              !item.vacanciesByCategory &&
+              Array.isArray(prices) &&
+              prices.length > 0 &&
+              typeof item.vacancies === 'number';
+
+            const derivedVacanciesByCategory = shouldDeriveByCategory
+              ? prices
+                  .filter((row: any) => typeof row?.category === 'string')
+                  .map((row: any) => ({
+                    category: row.category,
+                    vacancies: item.vacancies
+                  }))
+              : null;
+
+            const finalVacanciesByCategory = hasGroupCategory
+              ? null
+              : item.vacanciesByCategory ?? derivedVacanciesByCategory;
+            const includeVacancies = hasGroupCategory || !finalVacanciesByCategory;
+
+            return {
+              productId: item.product.productId,
+              dateTime: toGygDateTime(item.dateTime, item.product?.timezone),
+              openingTimes: item.openingTimes,
+              cutoffSeconds: item.cutoffSeconds,
+              vacancies: includeVacancies ? item.vacancies : undefined,
+              vacanciesByCategory: finalVacanciesByCategory,
+              currency: item.currency,
+              pricesByCategory: item.pricesByCategory,
+              tieredPricesByCategory: item.tieredPricesByCategory
+            };
+          })
         }
       };
     }
@@ -121,7 +149,11 @@ const gygRoutes: FastifyPluginAsync = async (fastify) => {
     },
     async (request) => {
       const body = cancelBookingRequestSchema.parse(request.body);
-      return bookingService.cancelBooking({ bookingReference: body.data.bookingReference });
+      return bookingService.cancelBooking({
+        bookingReference: body.data.bookingReference,
+        gygBookingReference: body.data.gygBookingReference,
+        productId: body.data.productId
+      });
     }
   );
 

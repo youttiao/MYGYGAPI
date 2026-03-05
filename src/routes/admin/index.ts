@@ -9,6 +9,7 @@ import {
   adminAvailabilityQuerySchema,
   adminBookingsQuerySchema,
   adminAvailabilityDeleteParamsSchema,
+  adminAccessLogsQuerySchema,
   adminProductSettingsBodySchema,
   adminProductParamsSchema,
   adminProductsQuerySchema,
@@ -100,7 +101,11 @@ const adminRoutes: FastifyPluginAsync = async (fastify) => {
         return;
       }
       const updated = await productService.updateProductSettings(params.id, {
-        autoCloseHours: body.autoCloseHours
+        autoCloseHours: body.autoCloseHours,
+        participantsMin: body.participantsMin,
+        participantsMax: body.participantsMax,
+        groupSizeMin: body.groupSizeMin,
+        groupSizeMax: body.groupSizeMax
       });
       return { data: updated };
     }
@@ -223,10 +228,44 @@ const adminRoutes: FastifyPluginAsync = async (fastify) => {
         return;
       }
 
-      const result = await gygOutboundService.notifyAvailabilityUpdate({
-        productId: product.productId,
-        availabilities: mapped
-      });
+      let result: Awaited<ReturnType<typeof gygOutboundService.notifyAvailabilityUpdate>>;
+      try {
+        result = await gygOutboundService.notifyAvailabilityUpdate({
+          productId: product.productId,
+          availabilities: mapped
+        });
+
+        await fastify.prisma.httpAccessLog.create({
+          data: {
+            direction: 'OUTBOUND',
+            source: 'GYG_NOTIFY',
+            method: 'POST',
+            path: '/1/notify-availability-update',
+            statusCode: result.status,
+            requestBody: {
+              productId: product.productId,
+              availabilities: mapped
+            } as any,
+            responseBody: result.body as any
+          }
+        });
+      } catch (error) {
+        await fastify.prisma.httpAccessLog.create({
+          data: {
+            direction: 'OUTBOUND',
+            source: 'GYG_NOTIFY',
+            method: 'POST',
+            path: '/1/notify-availability-update',
+            statusCode: 0,
+            requestBody: {
+              productId: product.productId,
+              availabilities: mapped
+            } as any,
+            errorMessage: error instanceof Error ? error.message : String(error)
+          }
+        });
+        throw error;
+      }
 
       return {
         data: {
@@ -239,6 +278,30 @@ const adminRoutes: FastifyPluginAsync = async (fastify) => {
           gygResponse: result
         }
       };
+    }
+  );
+
+  fastify.get(
+    '/access-logs',
+    {
+      schema: {
+        tags: ['Admin'],
+        security: [{ AdminToken: [] }],
+        querystring: adminAccessLogsQuerySchema
+      }
+    },
+    async (request) => {
+      const query = adminAccessLogsQuerySchema.parse(request.query);
+      const logs = await fastify.prisma.httpAccessLog.findMany({
+        where: {
+          source: query.source,
+          path: query.path,
+          statusCode: query.statusCode
+        },
+        orderBy: { createdAt: 'desc' },
+        take: query.limit
+      });
+      return { data: logs };
     }
   );
 

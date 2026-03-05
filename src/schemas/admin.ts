@@ -130,6 +130,27 @@ export const adminAvailabilityDeleteParamsSchema = z.object({
   availabilityId: z.string().min(1)
 });
 
-export const adminProductSettingsBodySchema = z.object({
-  autoCloseHours: z.number().int().nonnegative()
+export const adminProductSettingsBodySchema = z
+  .object({
+    autoCloseHours: z.number().int().nonnegative().optional(),
+    participantsMin: z.number().int().positive().optional(),
+    participantsMax: z.number().int().positive().optional(),
+    groupSizeMin: z.number().int().positive().optional(),
+    groupSizeMax: z.number().int().positive().optional()
+  })
+  .refine(
+    (value) =>
+      value.autoCloseHours !== undefined ||
+      value.participantsMin !== undefined ||
+      value.participantsMax !== undefined ||
+      value.groupSizeMin !== undefined ||
+      value.groupSizeMax !== undefined,
+    { message: 'At least one settings field must be provided' }
+  );
+
+export const adminAccessLogsQuerySchema = z.object({
+  source: z.string().optional(),
+  path: z.string().optional(),
+  statusCode: z.coerce.number().int().min(100).max(599).optional(),
+  limit: z.coerce.number().int().min(1).max(500).default(100)
 });

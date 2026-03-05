@@ -141,3 +141,24 @@ model IdempotencyRecord {
 
   @@unique([endpoint, idempotencyKey])
 }
+
+model HttpAccessLog {
+  id             String   @id @default(cuid())
+  direction      String
+  source         String
+  method         String
+  path           String
+  statusCode     Int
+  requestId      String?
+  correlationId  String?
+  ip             String?
+  userAgent      String?
+  durationMs     Int?
+  requestBody    Json?
+  responseBody   Json?
+  errorMessage   String?
+  createdAt      DateTime @default(now())
+
+  @@index([source, createdAt])
+  @@index([path, createdAt])
+}

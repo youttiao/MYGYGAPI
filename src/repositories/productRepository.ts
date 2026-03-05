@@ -46,7 +46,12 @@ export class ProductRepository {
   }
 
   findById(id: string) {
-    return this.prisma.product.findUnique({ where: { id } });
+    return this.prisma.product.findUnique({
+      where: { id },
+      include: {
+        pricingCategories: true
+      }
+    });
   }
 
   listBySupplierId(supplierId: string) {
@@ -65,11 +70,49 @@ export class ProductRepository {
     });
   }
 
-  updateSettings(id: string, settings: { autoCloseHours: number }) {
+  async updateSettings(
+    id: string,
+    settings: {
+      autoCloseHours?: number;
+      participantsMin?: number;
+      participantsMax?: number;
+      groupSizeMin?: number;
+      groupSizeMax?: number;
+    }
+  ) {
+    if (
+      settings.groupSizeMin !== undefined ||
+      settings.groupSizeMax !== undefined
+    ) {
+      await this.prisma.pricingCategory.upsert({
+        where: {
+          productId_category: {
+            productId: id,
+            category: 'GROUP'
+          }
+        },
+        update: {
+          groupSizeMin: settings.groupSizeMin,
+          groupSizeMax: settings.groupSizeMax
+        },
+        create: {
+          productId: id,
+          category: 'GROUP',
+          groupSizeMin: settings.groupSizeMin,
+          groupSizeMax: settings.groupSizeMax
+        }
+      });
+    }
+
     return this.prisma.product.update({
       where: { id },
       data: {
-        autoCloseHours: settings.autoCloseHours
+        autoCloseHours: settings.autoCloseHours,
+        participantsMin: settings.participantsMin,
+        participantsMax: settings.participantsMax
+      },
+      include: {
+        pricingCategories: true
       }
     });
   }

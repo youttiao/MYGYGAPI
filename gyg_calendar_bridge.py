@@ -1,9 +1,11 @@
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from fastapi import Depends, FastAPI, HTTPException, Query, Request
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
+from fastapi.staticfiles import StaticFiles
 import json
 import os
+from pathlib import Path
 import secrets
 import sqlite3
 import threading
@@ -14,11 +16,18 @@ APP_NAME = "gyg-inventory-bridge"
 
 GYG_BASIC_USER = os.getenv("GYG_BASIC_USER", "gyg")
 GYG_BASIC_PASS = os.getenv("GYG_BASIC_PASS", "change-me")
+ADMIN_BASIC_USER = os.getenv("ADMIN_BASIC_USER", "admin")
+ADMIN_BASIC_PASS = os.getenv("ADMIN_BASIC_PASS", "123456GYG")
 STORAGE_PATH = os.getenv("STORAGE_PATH", "./data/orders.sqlite3")
 RESERVATION_HOLD_SECONDS = max(900, int(os.getenv("RESERVATION_HOLD_SECONDS", "3600")))
+BASE_DIR = Path(__file__).resolve().parent
+TEMPLATES_DIR = BASE_DIR / "templates"
+STATIC_DIR = BASE_DIR / "static"
 
 security = HTTPBasic()
+admin_security = HTTPBasic()
 app = FastAPI(title=APP_NAME)
+app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 
 
 # A single process-safe DB connection + lock is enough for this minimal service.
@@ -119,6 +128,17 @@ def _check_basic_auth(credentials: HTTPBasicCredentials) -> None:
         )
 
 
+def _check_admin_basic_auth(credentials: HTTPBasicCredentials) -> None:
+    user_ok = secrets.compare_digest(credentials.username, ADMIN_BASIC_USER)
+    pass_ok = secrets.compare_digest(credentials.password, ADMIN_BASIC_PASS)
+    if not (user_ok and pass_ok):
+        raise HTTPException(
+            status_code=401,
+            detail="Unauthorized",
+            headers={"WWW-Authenticate": "Basic"},
+        )
+
+
 def _iso_to_dt(value: str) -> datetime:
     if not isinstance(value, str):
         raise ValueError("invalid datetime")
@@ -126,7 +146,7 @@ def _iso_to_dt(value: str) -> datetime:
 
 
 def _epoch_to_iso(ts: int) -> str:
-    return datetime.fromtimestamp(ts, tz=UTC).isoformat().replace("+00:00", "Z")
+    return datetime.fromtimestamp(ts, tz=timezone.utc).isoformat().replace("+00:00", "Z")
 
 
 def _error_response(error_code: str, error_message: str) -> JSONResponse:
@@ -214,88 +234,10 @@ def _collect_prices(data: dict[str, Any]) -> tuple[str | None, str | None]:
 
 
 @app.get("/", response_class=HTMLResponse)
-def admin_page() -> str:
-    return """
-<!doctype html>
-<html>
-<head>
-  <meta charset=\"utf-8\" />
-  <meta name=\"viewport\" content=\"width=device-width,initial-scale=1\" />
-  <title>GYG Calendar Admin</title>
-  <style>
-    body { font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; margin: 24px; background: #f7f8fa; color: #111; }
-    .card { background: #fff; border: 1px solid #d7dbe2; border-radius: 12px; padding: 16px; margin-bottom: 16px; }
-    h1 { margin: 0 0 16px; font-size: 24px; }
-    input, button { padding: 8px 10px; border: 1px solid #c8ced8; border-radius: 8px; font-size: 14px; }
-    button { background: #111827; color: #fff; border: 0; cursor: pointer; }
-    table { width: 100%; border-collapse: collapse; }
-    th, td { text-align: left; border-bottom: 1px solid #eceff4; padding: 8px; font-size: 13px; }
-    .row { display: flex; gap: 8px; flex-wrap: wrap; }
-    .muted { color: #5b6472; font-size: 13px; }
-  </style>
-</head>
-<body>
-  <h1>GYG Calendar Admin</h1>
-  <div class=\"card\">
-    <div class=\"row\">
-      <input id=\"productId\" placeholder=\"productId (e.g. prod123)\" />
-      <input id=\"dateTime\" placeholder=\"dateTime (ISO8601)\" value=\"2026-02-15T10:00:00+00:00\" />
-      <input id=\"vacancies\" type=\"number\" min=\"0\" placeholder=\"vacancies\" value=\"10\" />
-      <button onclick=\"upsertSlot()\">Save Slot</button>
-      <button onclick=\"loadSlots()\">Refresh</button>
-    </div>
-    <p class=\"muted\">这个页面用于维护你给 GYG 的库存源（productId + dateTime + vacancies）。</p>
-  </div>
-
-  <div class=\"card\">
-    <table>
-      <thead>
-        <tr><th>productId</th><th>dateTime</th><th>vacancies</th><th>updated</th><th></th></tr>
-      </thead>
-      <tbody id=\"rows\"></tbody>
-    </table>
-  </div>
-
-  <script>
-    async function loadSlots() {
-      const res = await fetch('/admin/calendar');
-      const data = await res.json();
-      const tbody = document.getElementById('rows');
-      tbody.innerHTML = '';
-      for (const slot of data.items) {
-        const tr = document.createElement('tr');
-        tr.innerHTML = `<td>${slot.productId}</td><td>${slot.dateTime}</td><td>${slot.vacancies}</td><td>${slot.updatedAt}</td><td><button onclick=\"delSlot('${slot.productId}','${slot.dateTime}')\">Delete</button></td>`;
-        tbody.appendChild(tr);
-      }
-    }
-
-    async function upsertSlot() {
-      const payload = {
-        productId: document.getElementById('productId').value.trim(),
-        dateTime: document.getElementById('dateTime').value.trim(),
-        vacancies: Number(document.getElementById('vacancies').value)
-      };
-      const res = await fetch('/admin/calendar/slot', {
-        method: 'POST',
-        headers: {'Content-Type':'application/json'},
-        body: JSON.stringify(payload)
-      });
-      if (!res.ok) alert('save failed');
-      await loadSlots();
-    }
-
-    async function delSlot(productId, dateTime) {
-      const qs = new URLSearchParams({productId, dateTime});
-      const res = await fetch('/admin/calendar/slot?' + qs.toString(), { method: 'DELETE' });
-      if (!res.ok) alert('delete failed');
-      await loadSlots();
-    }
-
-    loadSlots();
-  </script>
-</body>
-</html>
-    """
+def admin_page(credentials: HTTPBasicCredentials = Depends(admin_security)) -> HTMLResponse:
+    _check_admin_basic_auth(credentials)
+    html = (TEMPLATES_DIR / "admin" / "index.html").read_text(encoding="utf-8")
+    return HTMLResponse(content=html)
 
 
 @app.get("/health")
@@ -304,7 +246,8 @@ def health() -> dict[str, str]:
 
 
 @app.get("/admin/calendar")
-def admin_calendar() -> dict[str, Any]:
+def admin_calendar(credentials: HTTPBasicCredentials = Depends(admin_security)) -> dict[str, Any]:
+    _check_admin_basic_auth(credentials)
     with DB_LOCK:
         cur = DB.execute(
             "SELECT product_id, date_time, vacancies, updated_at FROM calendar_slots ORDER BY date_time ASC"
@@ -324,7 +267,10 @@ def admin_calendar() -> dict[str, Any]:
 
 
 @app.post("/admin/calendar/slot")
-async def admin_upsert_slot(request: Request) -> dict[str, str]:
+async def admin_upsert_slot(
+    request: Request, credentials: HTTPBasicCredentials = Depends(admin_security)
+) -> dict[str, str]:
+    _check_admin_basic_auth(credentials)
     payload = await _json_body(request)
     product_id = payload.get("productId")
     date_time = payload.get("dateTime")
@@ -361,7 +307,12 @@ async def admin_upsert_slot(request: Request) -> dict[str, str]:
 
 
 @app.delete("/admin/calendar/slot")
-def admin_delete_slot(productId: str = Query(...), dateTime: str = Query(...)) -> dict[str, str]:
+def admin_delete_slot(
+    productId: str = Query(...),
+    dateTime: str = Query(...),
+    credentials: HTTPBasicCredentials = Depends(admin_security),
+) -> dict[str, str]:
+    _check_admin_basic_auth(credentials)
     _iso_to_dt(dateTime)
     with DB_LOCK:
         DB.execute(

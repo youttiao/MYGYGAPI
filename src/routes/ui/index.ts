@@ -317,15 +317,12 @@ th{background:#f8fafc}
 
 <div class="card">
   <h3>Addons 配置</h3>
-  <p class="hint">用于 <code>/1/products/{productId}/addons/</code> 返回非空。请使用 JSON 数组。</p>
-  <textarea id="addonsJson" style="width:100%;min-height:150px;font-family:ui-monospace,Menlo,Monaco,Consolas,monospace">[
-  {"addonType":"FOOD","retailPrice":1050,"currency":"EUR"},
-  {"addonType":"OTHERS","retailPrice":100,"currency":"EUR","addonDescription":"Donation to support the local community"},
-  {"addonType":"TRANSPORT","retailPrice":500,"currency":"EUR","addonDescription":"Shuttle bus from the hotel"}
-]</textarea>
+  <p class="hint">用于 <code>/1/products/{productId}/addons/</code> 返回非空。currency 自动使用商品币种：<b id="addonsCurrency">-</b></p>
+  <div id="addonsRows"></div>
   <div class="row" style="margin-top:10px">
+    <div><button id="addAddonRow" class="secondary">新增一行 Addon</button></div>
     <div><button id="saveAddons" class="secondary">保存 Addons</button></div>
-    <div></div><div></div><div></div>
+    <div></div><div></div>
   </div>
 </div>
 
@@ -336,6 +333,7 @@ const out=document.getElementById('out');
 const tableBody=document.getElementById('tableBody');
 const print=(v)=>out.textContent=typeof v==='string'?v:JSON.stringify(v,null,2);
 const PRODUCT_TIMEZONE=${JSON.stringify(productTimezone)};
+let currentProductCurrency='CNY';
 const tokenEl=document.getElementById('token');
 tokenEl.value=localStorage.getItem('admin_token')||'';
 tokenEl.onchange=()=>localStorage.setItem('admin_token',tokenEl.value.trim());
@@ -414,6 +412,50 @@ async function api(path,opt={}){
   const t=await res.text(); let b; try{b=JSON.parse(t)}catch{b=t}
   if(!res.ok) throw new Error(JSON.stringify(b));
   return b;
+}
+
+const ADDON_TYPES=['FOOD','DRINKS','SAFETY','TRANSPORT','DONATION','OTHERS'];
+function createAddonRow(addon){
+  const row=document.createElement('div');
+  row.className='row';
+  row.style.marginTop='8px';
+  const typeVal=(addon&&addon.addonType)||'FOOD';
+  const priceVal=(addon&&typeof addon.retailPrice==='number')?String(addon.retailPrice):'';
+  const descVal=(addon&&addon.addonDescription)||'';
+  row.innerHTML=
+    '<div><label>addonType</label><select class="addonType">'+ADDON_TYPES.map((t)=>'<option '+(t===typeVal?'selected':'')+'>'+t+'</option>').join('')+'</select></div>'+
+    '<div><label>价格 retailPrice</label><input class="addonPrice" type="number" min="0" placeholder="例如 1050" value="'+priceVal+'"/></div>'+
+    '<div><label>描述 addonDescription</label><input class="addonDescription" placeholder="可留空" value="'+descVal.replace(/"/g,'&quot;')+'"/></div>'+
+    '<div><label>&nbsp;</label><button type="button" class="secondary addonRemove">删除该行</button></div>';
+  return row;
+}
+function renderAddonsRows(addons){
+  const container=document.getElementById('addonsRows');
+  container.innerHTML='';
+  const list=Array.isArray(addons)?addons:[];
+  if(list.length===0){
+    container.appendChild(createAddonRow({addonType:'FOOD'}));
+    return;
+  }
+  list.forEach((addon)=>container.appendChild(createAddonRow(addon)));
+}
+function collectAddonsRows(){
+  const rows=Array.from(document.querySelectorAll('#addonsRows .row'));
+  return rows
+    .map((row)=>{
+      const addonType=row.querySelector('.addonType').value;
+      const priceRaw=row.querySelector('.addonPrice').value.trim();
+      const addonDescription=row.querySelector('.addonDescription').value.trim();
+      if(priceRaw==='') return null;
+      const retailPrice=Number(priceRaw);
+      if(!Number.isInteger(retailPrice) || retailPrice<0){
+        throw new Error('addon retailPrice 必须是非负整数');
+      }
+      const addon={addonType,retailPrice,currency:currentProductCurrency};
+      if(addonDescription!=='') addon.addonDescription=addonDescription;
+      return addon;
+    })
+    .filter(Boolean);
 }
 
 function render(rows){
@@ -547,6 +589,8 @@ document.getElementById('availabilityMode').onchange=()=>updateAvailabilityModeU
 api('/admin/products/${id}')
   .then((res)=>{
     document.getElementById('externalProductId').textContent = res.data?.productId || 'N/A';
+    currentProductCurrency = (res.data?.currency || 'CNY').toUpperCase();
+    document.getElementById('addonsCurrency').textContent = currentProductCurrency;
     document.getElementById('autoCloseHours').value = String(res.data?.autoCloseHours ?? 0);
     document.getElementById('participantsMin').value = String(res.data?.participantsMin ?? 1);
     document.getElementById('participantsMax').value = String(res.data?.participantsMax ?? 999);
@@ -555,11 +599,13 @@ api('/admin/products/${id}')
       if(groupCfg.groupSizeMin!=null) document.getElementById('groupSizeMin').value = String(groupCfg.groupSizeMin);
       if(groupCfg.groupSizeMax!=null) document.getElementById('groupSizeMax').value = String(groupCfg.groupSizeMax);
     }
-    if(Array.isArray(res.data?.addons)){
-      document.getElementById('addonsJson').value = JSON.stringify(res.data.addons, null, 2);
-    }
+    renderAddonsRows(res.data?.addons || []);
   })
-  .catch(()=>{document.getElementById('externalProductId').textContent = 'N/A';});
+  .catch(()=>{
+    document.getElementById('externalProductId').textContent = 'N/A';
+    document.getElementById('addonsCurrency').textContent = currentProductCurrency;
+    renderAddonsRows([]);
+  });
 document.getElementById('quick7').onclick=()=>setRange(7);
 document.getElementById('quick30').onclick=()=>setRange(30);
 document.getElementById('load').onclick=()=>loadCalendar().catch(e=>print(String(e)));
@@ -590,12 +636,23 @@ document.getElementById('saveBookingRules').onclick=async()=>{
 };
 document.getElementById('saveAddons').onclick=async()=>{
   try{
-    const raw=document.getElementById('addonsJson').value.trim();
-    const addons=raw?JSON.parse(raw):[];
-    if(!Array.isArray(addons)) throw new Error('addonsJson 必须是 JSON 数组');
+    const addons=collectAddonsRows();
     const data=await api('/admin/products/${id}/addons',{method:'PATCH',body:JSON.stringify({addons})});
     print(data);
   }catch(e){print(String(e));}
+};
+document.getElementById('addAddonRow').onclick=()=>{
+  document.getElementById('addonsRows').appendChild(createAddonRow({addonType:'FOOD'}));
+};
+document.getElementById('addonsRows').onclick=(ev)=>{
+  const target=ev.target;
+  const btn=target && target.closest ? target.closest('button.addonRemove') : null;
+  if(!btn) return;
+  const row=btn.closest('.row');
+  if(row) row.remove();
+  if(document.querySelectorAll('#addonsRows .row').length===0){
+    document.getElementById('addonsRows').appendChild(createAddonRow({addonType:'FOOD'}));
+  }
 };
 document.getElementById('pushToGyg').onclick=async()=>{
   try{

@@ -203,7 +203,7 @@ async function loadLogs(){
 document.getElementById('load').onclick=()=>loadLogs().catch(e=>print(String(e)));
 </script></body></html>`;
 
-const calendarHtml = (id: string) => `<!doctype html><html lang="zh-CN"><head>
+const calendarHtml = (id: string, productTimezone = 'Asia/Shanghai') => `<!doctype html><html lang="zh-CN"><head>
 <meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
 <title>商品日历管理</title>
 <style>
@@ -321,6 +321,7 @@ th{background:#f8fafc}
 const out=document.getElementById('out');
 const tableBody=document.getElementById('tableBody');
 const print=(v)=>out.textContent=typeof v==='string'?v:JSON.stringify(v,null,2);
+const PRODUCT_TIMEZONE=${JSON.stringify(productTimezone)};
 const tokenEl=document.getElementById('token');
 tokenEl.value=localStorage.getItem('admin_token')||'';
 tokenEl.onchange=()=>localStorage.setItem('admin_token',tokenEl.value.trim());
@@ -354,13 +355,29 @@ function formatInOffset(iso, tz){
     time: pad(shifted.getUTCHours())+':'+pad(shifted.getUTCMinutes())
   };
 }
+function formatInProductTimeZone(iso){
+  if(!iso) return {date:'',time:''};
+  const d=new Date(iso);
+  if(Number.isNaN(d.getTime())) return {date:'',time:''};
+  const dateFmt=new Intl.DateTimeFormat('en-CA',{
+    timeZone: PRODUCT_TIMEZONE,
+    year:'numeric',
+    month:'2-digit',
+    day:'2-digit'
+  });
+  const timeFmt=new Intl.DateTimeFormat('en-GB',{
+    timeZone: PRODUCT_TIMEZONE,
+    hour:'2-digit',
+    minute:'2-digit',
+    hour12:false
+  });
+  return {date: dateFmt.format(d), time: timeFmt.format(d)};
+}
 function dateOnly(iso){
-  const tz=(document.getElementById('tz')&&document.getElementById('tz').value)||'+08:00';
-  return formatInOffset(iso,tz).date;
+  return formatInProductTimeZone(iso).date;
 }
 function timeOnly(iso){
-  const tz=(document.getElementById('tz')&&document.getElementById('tz').value)||'+08:00';
-  return formatInOffset(iso,tz).time;
+  return formatInProductTimeZone(iso).time;
 }
 function openingTimesText(row){
   const ots=Array.isArray(row.openingTimes)?row.openingTimes:[];
@@ -575,7 +592,8 @@ const uiRoutes: FastifyPluginAsync = async (fastify) => {
 
   fastify.get('/products/:id/calendar', async (request, reply) => {
     const id = (request.params as { id: string }).id;
-    reply.type('text/html; charset=utf-8').send(calendarHtml(id));
+    const product = await fastify.prisma.product.findUnique({ where: { id } });
+    reply.type('text/html; charset=utf-8').send(calendarHtml(id, product?.timezone || 'Asia/Shanghai'));
   });
 };
 

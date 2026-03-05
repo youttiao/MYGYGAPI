@@ -49,7 +49,8 @@ export class ProductRepository {
     return this.prisma.product.findUnique({
       where: { id },
       include: {
-        pricingCategories: true
+        pricingCategories: true,
+        addons: true
       }
     });
   }
@@ -112,7 +113,43 @@ export class ProductRepository {
         participantsMax: settings.participantsMax
       },
       include: {
-        pricingCategories: true
+        pricingCategories: true,
+        addons: true
+      }
+    });
+  }
+
+  async replaceAddons(
+    id: string,
+    addons: Array<{
+      addonType: string;
+      retailPrice: number;
+      currency: string;
+      addonDescription?: string;
+    }>
+  ) {
+    await this.prisma.$transaction([
+      this.prisma.productAddon.deleteMany({ where: { productId: id } }),
+      ...(addons.length > 0
+        ? [
+            this.prisma.productAddon.createMany({
+              data: addons.map((addon) => ({
+                productId: id,
+                addonType: addon.addonType,
+                addonDescription: addon.addonDescription,
+                retailPrice: addon.retailPrice,
+                currency: addon.currency
+              }))
+            })
+          ]
+        : [])
+    ]);
+
+    return this.prisma.product.findUnique({
+      where: { id },
+      include: {
+        pricingCategories: true,
+        addons: true
       }
     });
   }

@@ -87,4 +87,16 @@ export class ProductService {
   ) {
     return this.repo.updateSettings(id, settings);
   }
+
+  replaceProductAddons(
+    id: string,
+    addons: Array<{
+      addonType: string;
+      retailPrice: number;
+      currency: string;
+      addonDescription?: string;
+    }>
+  ) {
+    return this.repo.replaceAddons(id, addons);
+  }
 }

@@ -12,6 +12,7 @@ import {
   adminAccessLogsQuerySchema,
   adminProductSettingsBodySchema,
   adminProductParamsSchema,
+  adminProductAddonsBodySchema,
   adminProductsQuerySchema,
   adminPushNotifyAvailabilityBodySchema,
   createProductBodySchema
@@ -79,6 +80,29 @@ const adminRoutes: FastifyPluginAsync = async (fastify) => {
       const body = createProductBodySchema.parse(request.body);
       const created = await productService.createProduct(body);
       reply.code(201).send(created);
+    }
+  );
+
+  fastify.patch(
+    '/products/:id/addons',
+    {
+      schema: {
+        tags: ['Admin'],
+        security: [{ AdminToken: [] }],
+        params: adminProductParamsSchema,
+        body: adminProductAddonsBodySchema
+      }
+    },
+    async (request, reply) => {
+      const params = adminProductParamsSchema.parse(request.params);
+      const body = adminProductAddonsBodySchema.parse(request.body);
+      const product = await productService.getProductById(params.id);
+      if (!product) {
+        reply.code(404).send({ error: 'Product not found' });
+        return;
+      }
+      const updated = await productService.replaceProductAddons(params.id, body.addons);
+      return { data: updated };
     }
   );
 

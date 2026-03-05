@@ -315,6 +315,20 @@ th{background:#f8fafc}
   </table>
 </div>
 
+<div class="card">
+  <h3>Addons 配置</h3>
+  <p class="hint">用于 <code>/1/products/{productId}/addons/</code> 返回非空。请使用 JSON 数组。</p>
+  <textarea id="addonsJson" style="width:100%;min-height:150px;font-family:ui-monospace,Menlo,Monaco,Consolas,monospace">[
+  {"addonType":"FOOD","retailPrice":1050,"currency":"EUR"},
+  {"addonType":"OTHERS","retailPrice":100,"currency":"EUR","addonDescription":"Donation to support the local community"},
+  {"addonType":"TRANSPORT","retailPrice":500,"currency":"EUR","addonDescription":"Shuttle bus from the hotel"}
+]</textarea>
+  <div class="row" style="margin-top:10px">
+    <div><button id="saveAddons" class="secondary">保存 Addons</button></div>
+    <div></div><div></div><div></div>
+  </div>
+</div>
+
 <div class="card"><h3>输出</h3><div id="out" class="out">Ready</div></div>
 </div>
 <script>
@@ -541,6 +555,9 @@ api('/admin/products/${id}')
       if(groupCfg.groupSizeMin!=null) document.getElementById('groupSizeMin').value = String(groupCfg.groupSizeMin);
       if(groupCfg.groupSizeMax!=null) document.getElementById('groupSizeMax').value = String(groupCfg.groupSizeMax);
     }
+    if(Array.isArray(res.data?.addons)){
+      document.getElementById('addonsJson').value = JSON.stringify(res.data.addons, null, 2);
+    }
   })
   .catch(()=>{document.getElementById('externalProductId').textContent = 'N/A';});
 document.getElementById('quick7').onclick=()=>setRange(7);
@@ -568,6 +585,15 @@ document.getElementById('saveBookingRules').onclick=async()=>{
     };
     if(groupSizeMinRaw!=='') payload.groupSizeMin=Number(groupSizeMinRaw);
     const data=await api('/admin/products/${id}/settings',{method:'PATCH',body:JSON.stringify(payload)});
+    print(data);
+  }catch(e){print(String(e));}
+};
+document.getElementById('saveAddons').onclick=async()=>{
+  try{
+    const raw=document.getElementById('addonsJson').value.trim();
+    const addons=raw?JSON.parse(raw):[];
+    if(!Array.isArray(addons)) throw new Error('addonsJson 必须是 JSON 数组');
+    const data=await api('/admin/products/${id}/addons',{method:'PATCH',body:JSON.stringify({addons})});
     print(data);
   }catch(e){print(String(e));}
 };

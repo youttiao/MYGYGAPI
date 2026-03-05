@@ -148,6 +148,17 @@ export const adminProductSettingsBodySchema = z
     { message: 'At least one settings field must be provided' }
   );
 
+export const adminProductAddonsBodySchema = z.object({
+  addons: z.array(
+    z.object({
+      addonType: z.enum(['FOOD', 'DRINKS', 'SAFETY', 'TRANSPORT', 'DONATION', 'OTHERS']),
+      retailPrice: z.number().int().nonnegative(),
+      currency: z.string().length(3),
+      addonDescription: z.string().max(50).optional()
+    })
+  )
+});
+
 export const adminAccessLogsQuerySchema = z.object({
   source: z.string().optional(),
   path: z.string().optional(),

@@ -291,7 +291,7 @@ th{background:#f8fafc}
       <div><label>预订人数最小值 participantsMin</label><input id="participantsMin" type="number" min="1" value="1"/></div>
       <div><label>预订人数最大值 participantsMax</label><input id="participantsMax" type="number" min="1" value="999"/></div>
       <div><label>GROUP groupSize 最小值(可选)</label><input id="groupSizeMin" type="number" min="1" placeholder="可留空"/></div>
-      <div><label>GROUP groupSize 最大值</label><input id="groupSizeMax" type="number" min="1" value="999"/></div>
+      <div><label>GROUP groupSize 最大值</label><input id="groupSizeMax" type="number" min="1" placeholder="可留空"/></div>
     </div>
     <div class="row" style="margin-top:10px">
       <div><button id="saveBookingRules" class="secondary">保存预订规则</button></div>

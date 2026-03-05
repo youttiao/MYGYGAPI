@@ -14,6 +14,7 @@ import { AutoCloseService } from './services/autoCloseService.js';
 
 export async function buildApp(): Promise<FastifyInstance> {
   const app = Fastify({
+    ignoreTrailingSlash: true,
     logger: {
       level: process.env.LOG_LEVEL ?? 'info',
       redact: {

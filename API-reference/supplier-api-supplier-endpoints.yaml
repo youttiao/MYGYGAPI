@@ -1,0 +1,1791 @@
+openapi: 3.0.0
+info:
+  title: Supplier API - Supplier-side Endpoints
+  version: '1.0'
+  description:
+    $ref: 'description-supplier-endpoints.md'
+  contact:
+    email: supplier-api@getyourguide.com
+    name: 'Integration Support, GetYourGuide'
+    url: https://integrator.getyourguide.com
+servers:
+  - url: 'https://{host}'
+    variables:
+      host:
+        default: example-host.com
+    description: Supplier Endpoint
+security:
+  - BasicAuth: []
+paths:
+  /1/get-availabilities/:
+    get:
+      summary: Availability Query
+      tags:
+        - Availability
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/AvailabilityResponse'
+                  - $ref: '#/components/schemas/ErrorResponseAvailability'
+              examples:
+                Time Point Product - Individual:
+                  value:
+                    data:
+                      availabilities:
+                        - dateTime: '2020-12-01T10:00:00+02:00'
+                          productId: prod123
+                          cutoffSeconds: 3600
+                          vacancies: 10
+                          currency: 'EUR'
+                          pricesByCategory:
+                            retailPrices:
+                              - category: 'ADULT'
+                                price: 1500
+                              - category: 'CHILD'
+                                price: 1000
+                        - dateTime: '2020-12-01T15:00:00+02:00'
+                          productId: prod123
+                          cutoffSeconds: 1800
+                          vacancies: 12
+                          currency: 'EUR'
+                          pricesByCategory:
+                            retailPrices:
+                              - category: 'ADULT'
+                                price: 1600
+                              - category: 'CHILD'
+                                price: 1100
+                Time Period Product - Individual:
+                  value:
+                    data:
+                      availabilities:
+                        - dateTime: '2020-12-01T00:00:00+02:00'
+                          openingTimes:
+                            - fromTime: '09:00'
+                              toTime: '18:00'
+                          productId: prod123
+                          cutoffSeconds: 0
+                          vacancies: 10
+                          currency: 'EUR'
+                          pricesByCategory:
+                            retailPrices:
+                              - category: 'ADULT'
+                                price: 1500
+                              - category: 'CHILD'
+                                price: 1000
+                        - dateTime: '2020-12-02T00:00:00+02:00'
+                          openingTimes:
+                            - fromTime: '09:00'
+                              toTime: '12:00'
+                          productId: prod123
+                          cutoffSeconds: 0
+                          vacancies: 12
+                          currency: 'EUR'
+                          pricesByCategory:
+                            retailPrices:
+                              - category: 'ADULT'
+                                price: 1600
+                              - category: 'CHILD'
+                                price: 1100
+                Time Point Product - Group:
+                  value:
+                    data:
+                      availabilities:
+                        - dateTime: '2020-12-01T10:00:00+02:00'
+                          productId: prod123
+                          cutoffSeconds: 3600
+                          vacancies: 10
+                        - dateTime: '2020-12-01T15:00:00+02:00'
+                          productId: prod123
+                          cutoffSeconds: 1800
+                          vacancies: 12
+                Time Period Product - Group:
+                  value:
+                    data:
+                      availabilities:
+                        - dateTime: '2020-12-01T00:00:00+02:00'
+                          openingTimes:
+                            - fromTime: '09:00'
+                              toTime: '18:00'
+                          productId: prod123
+                          cutoffSeconds: 0
+                          vacancies: 10
+                        - dateTime: '2020-12-02T00:00:00+02:00'
+                          openingTimes:
+                            - fromTime: '09:00'
+                              toTime: '12:00'
+                          productId: prod123
+                          cutoffSeconds: 0
+                          vacancies: 12
+                Time Point Product - Tiered Pricing Over API:
+                  value:
+                    data:
+                      availabilities:
+                        - dateTime: '2020-12-01T10:00:00+02:00'
+                          productId: prod123
+                          cutoffSeconds: 3600
+                          vacancies: 10
+                          currency: 'EUR'
+                          tieredPricesByCategory:
+                            retailPrices:
+                              - category: 'ADULT'
+                                tiers:
+                                  - lowerBound: 1
+                                    upperBound: 5
+                                    price: 1600
+                                  - lowerBound: 6
+                                    upperBound: 10
+                                    price: 1500
+                              - category: 'CHILD'
+                                tiers:
+                                  - lowerBound: 1
+                                    upperBound: 5
+                                    price: 1100
+                                  - lowerBound: 6
+                                    upperBound: 10
+                                    price: 1000
+                Time Period Product - Tiered Pricing Over API:
+                  value:
+                    data:
+                      availabilities:
+                        - dateTime: '2020-12-01T00:00:00+02:00'
+                          openingTimes:
+                            - fromTime: '09:00'
+                              toTime: '18:00'
+                          productId: prod123
+                          cutoffSeconds: 0
+                          vacancies: 10
+                          currency: 'EUR'
+                          tieredPricesByCategory:
+                            retailPrices:
+                              - category: 'ADULT'
+                                tiers:
+                                  - lowerBound: 1
+                                    upperBound: 5
+                                    price: 1600
+                                  - lowerBound: 6
+                                    upperBound: 10
+                                    price: 1500
+                              - category: 'CHILD'
+                                tiers:
+                                  - lowerBound: 1
+                                    upperBound: 5
+                                    price: 1100
+                                  - lowerBound: 6
+                                    upperBound: 10
+                                    price: 1000
+                Time Point Product - Availability By Ticket Category:
+                  value:
+                    data:
+                      availabilities:
+                        - dateTime: '2020-12-01T10:00:00+02:00'
+                          productId: prod123
+                          cutoffSeconds: 3600
+                          currency: 'EUR'
+                          vacanciesByCategory:
+                            - category: 'ADULT'
+                              vacancies: 5
+                            - category: 'CHILD'
+                              vacancies: 5
+                Time Period Product - Availability By Ticket Category:
+                  value:
+                    data:
+                      availabilities:
+                        - dateTime: '2020-12-01T00:00:00+02:00'
+                          openingTimes:
+                            - fromTime: '09:00'
+                              toTime: '18:00'
+                          productId: prod123
+                          cutoffSeconds: 0
+                          currency: 'EUR'
+                          vacanciesByCategory:
+                            - category: 'ADULT'
+                              vacancies: 5
+                            - category: 'CHILD'
+                              vacancies: 5
+                No availabilities:
+                  value:
+                    data:
+                      availabilities: []
+                No availabilities for some dates:
+                  value:
+                    data:
+                      availabilities:
+                        - dateTime: '2020-12-01T10:00:00+02:00'
+                          productId: prod123
+                          vacancies: 0
+                        - dateTime: '2020-12-01T15:00:00+02:00'
+                          productId: prod123
+                          vacancies: 0
+                        - dateTime: '2020-12-01T16:00:00+02:00'
+                          productId: prod123
+                          vacancies: 3
+                No availabilities for some dates with Price over API:
+                  value:
+                    data:
+                      availabilities:
+                        - dateTime: '2020-12-01T10:00:00+02:00'
+                          productId: prod123
+                          vacancies: 0
+                        - dateTime: '2020-12-01T15:00:00+02:00'
+                          productId: prod123
+                          vacancies: 0
+                        - dateTime: '2020-12-01T16:00:00+02:00'
+                          productId: prod123
+                          vacancies: 3
+                          currency: 'EUR'
+                          pricesByCategory:
+                            retailPrices:
+                              - category: 'ADULT'
+                                price: 1600
+                              - category: 'CHILD'
+                                price: 1100
+                Error:
+                  value:
+                    errorCode: INVALID_PRODUCT
+                    errorMessage: Invalid productId
+      operationId: get-get-availabilities
+      description:
+        $ref: 'description-availability.md'
+      parameters:
+        - schema:
+            type: string
+          in: query
+          name: productId
+          description: The ID of the requested product in the supplier’s system. Please avoid using the character `%` in the `productId`, as it is used as an escape character in URL encoding and may cause encoding/decoding failures in query parameters.
+          required: true
+          example: prod123
+        - schema:
+            type: string
+          in: query
+          name: fromDateTime
+          description: Marks the start (inclusive) of the requested time period (ISO 8601).
+          required: true
+          example: '2020-12-01T00:00:00+02:00'
+        - schema:
+            type: string
+          in: query
+          name: toDateTime
+          description: 'Marks the end (inclusive) of the requested time period (ISO 8601). '
+          required: true
+          example: '2020-12-01T23:59:59+02:00'
+  /1/reserve/:
+    post:
+      summary: Reservation
+      operationId: post-reserve
+      tags:
+        - Reservations
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/ReservationResponse'
+                  - $ref: '#/components/schemas/ErrorResponseReservation'
+                  - $ref: '#/components/schemas/ErrorParticipantSizeConstraint'
+                  - $ref: '#/components/schemas/ErrorGroupSizeConstraint'
+              examples:
+                Success Response:
+                  value:
+                    data:
+                      reservationReference: res789
+                      reservationExpiration: '2020-12-01T07:35:53+00:00'
+                Minimum Participant Size Constraint:
+                  $ref: '#/components/examples/ErrorMaxParticipantSizeConstraint'
+                Maximum Participant Size Constraint:
+                  $ref: '#/components/examples/ErrorMinParticipantSizeConstraint'
+                Group Size Constraint:
+                  $ref: '#/components/examples/ErrorGroupSizeConstraint'
+      description:
+        $ref: 'description-reservation.md'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReservationRequest'
+            examples:
+              Time Point:
+                value:
+                  data:
+                    bookingItems:
+                      - category: ADULT
+                        count: 2
+                      - category: CHILD
+                        count: 1
+                    dateTime: '2020-12-01T10:00:00+02:00'
+                    productId: prod123
+                    gygBookingReference: GYG189H3K1
+              Time Period:
+                value:
+                  data:
+                    bookingItems:
+                      - category: ADULT
+                        count: 2
+                      - category: CHILD
+                        count: 1
+                    dateTime: '2020-12-01T00:00:00+02:00'
+                    productId: prod123
+                    gygBookingReference: GYG189H3K1
+              Group Category:
+                value:
+                  data:
+                    bookingItems:
+                      - category: GROUP
+                        count: 1
+                        groupSize: 5
+                      - category: GROUP
+                        count: 1
+                        groupSize: 8
+                    dateTime: '2020-12-01T10:00:00+02:00'
+                    productId: prod124
+                    gygBookingReference: GYG189H3K1
+  /1/cancel-reservation/:
+    post:
+      summary: Reservation Cancellation
+      tags:
+        - Reservations
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/EmptySuccessResponse'
+                  - $ref: '#/components/schemas/ErrorResponseReservationCancellation'
+              examples:
+                Success Response:
+                  value:
+                    data: {}
+          headers: {}
+      operationId: post-cancel-reservation
+      description: 'This call represents when either the customer removes the item from their shopping cart, or when it’s automatically removed by default after 1 hour.'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReservationCancellationRequest'
+            examples:
+              Success Response:
+                value:
+                  data:
+                    reservationReference: res789
+                    gygBookingReference: GYG189H3K1
+  /1/book/:
+    post:
+      summary: Booking
+      tags:
+        - Bookings
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/BookingResponse'
+                  - $ref: '#/components/schemas/ErrorResponseBooking'
+                  - $ref: '#/components/schemas/ErrorParticipantSizeConstraint'
+                  - $ref: '#/components/schemas/ErrorGroupSizeConstraint'
+              examples:
+                Success Response:
+                  value:
+                    data:
+                      bookingReference: bk456
+                      tickets:
+                        - category: ADULT
+                          ticketCode: code001
+                          ticketCodeType: QR_CODE
+                        - category: ADULT
+                          ticketCode: code002
+                          ticketCodeType: QR_CODE
+                        - category: CHILD
+                          ticketCode: code003
+                          ticketCodeType: QR_CODE
+                Minimum Participant Size Constraint:
+                  $ref: '#/components/examples/ErrorMaxParticipantSizeConstraint'
+                Maximum Participant Size Constraint:
+                  $ref: '#/components/examples/ErrorMinParticipantSizeConstraint'
+                Group Size Constraint:
+                  $ref: '#/components/examples/ErrorGroupSizeConstraint'
+      operationId: post-book
+      description:
+        $ref: 'description-book.md'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BookingRequest'
+            examples:
+              With meeting point:
+                value:
+                  data:
+                    bookingItems:
+                      - category: ADULT
+                        count: 2
+                        retailPrice: 1560
+                      - category: CHILD
+                        count: 1
+                        retailPrice: 1300
+                    dateTime: '2020-12-01T10:00:00+02:00'
+                    currency: "USD"
+                    gygBookingReference: GYG1B2D34GHI
+                    productId: prod123
+                    reservationReference: res789
+                    travelers:
+                      - email: john@john-smith.com
+                        firstName: John
+                        lastName: Smith
+                        phoneNumber: +49 030 1231231
+                    comment: Please confirm your meeting point \n Hotel ABC.
+              With pick-up:
+                value:
+                  data:
+                    bookingItems:
+                      - category: ADULT
+                        count: 2
+                      - category: CHILD
+                        count: 1
+                    dateTime: '2020-12-01T10:00:00+02:00'
+                    gygBookingReference: GYG1B2D34GHI
+                    productId: prod123
+                    reservationReference: res789
+                    travelers:
+                      - email: john@john-smith.com
+                        firstName: John
+                        lastName: Smith
+                        phoneNumber: +49 030 1231231
+                    travelerHotel: Hotel Name, Street, City, Country
+                    comment: Please provide accommodation details
+              With traveler weight:
+                value:
+                  data:
+                    bookingItems:
+                      - category: ADULT
+                        count: 3
+                    language: en
+                    dateTime: '2020-12-01T10:00:00+02:00'
+                    gygBookingReference: GYG1B2D34GHI
+                    productId: prod123
+                    reservationReference: res789
+                    travelers:
+                      - email: john@john-smith.com
+                        firstName: John
+                        lastName: Smith
+                        phoneNumber: +49 030 1231231
+                    comment: 'Please provide the weights of everyone in your group.\nTraveler 1:\nWeight: 78 kg\nTraveler 2:\nWeight: 61 kg\nTraveler 3:\nWeight: 70 kg\n'
+              With Addons:
+                value:
+                  data:
+                    bookingItems:
+                      - category: ADULT
+                        count: 2
+                        retailPrice: 1560
+                      - category: CHILD
+                        count: 1
+                        retailPrice: 1300
+                    addonItems:
+                      - addonType: FOOD
+                        addonDescription: Dinner at a local restaurant
+                        count: 2
+                        retailPrice: 1050
+                      - addonType: SAFETY
+                        addonDescription: Child safety seat
+                        count: 1
+                        retailPrice: 100
+                    dateTime: '2020-12-01T10:00:00+02:00'
+                    currency: "USD"
+                    gygBookingReference: GYG1B2D34GHI
+                    productId: prod123
+                    reservationReference: res789
+                    travelers:
+                      - email: john@john-smith.com
+                        firstName: John
+                        lastName: Smith
+                        phoneNumber: +49 030 1231231
+  /1/cancel-booking/:
+    post:
+      summary: Booking Cancellation
+      tags:
+        - Bookings
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/EmptySuccessResponse'
+                  - $ref: '#/components/schemas/ErrorResponseBookingCancellation'
+              examples:
+                Success Response:
+                  value:
+                    data: {}
+      operationId: post-cancel-booking
+      description: This call must cancel the booking in your system.<br><br><strong>Note:</strong> The 3 error codes, <strong>BOOKING_REDEEMED</strong>, <strong>BOOKING_IN_PAST</strong>, <strong>BOOKING_ALREADY_CANCELLED</strong> permit our connectivity partners to reject cancellation requests from GYG based on the below reasons. Please be aware we will be actively monitoring the usage of these error codes and booking cancellation rejections. If there are any concerns raised by our internal teams on their usage, we will be reaching out to you.<br><table><tr><th>Error Code</th><th>Issue</th></tr><tr><td>BOOKING_REDEEMED</td><td>The booking was already used/redeemed by the traveler and the reservation system has this information.</td></tr><tr><td>BOOKING_IN_PAST</td><td>The booking is in the past and cannot be canceled</td></tr><tr><td>BOOKING_ALREADY_CANCELLED</td><td>The booking has already been canceled on the Connectivity partner's end</td></tr></table>
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BookingCancellationRequest'
+            examples:
+              Success Response:
+                value:
+                  data:
+                    bookingReference: bk456
+                    gygBookingReference: GYG1B2D34GHI
+                    productId: bk456
+  /1/notify/:
+    post:
+      summary: Notification
+      operationId: post-notify
+      tags:
+        - Notification
+      description:
+        $ref: 'description-notify.md'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Notification'
+            examples:
+              Product Deactivation:
+                $ref: '#/components/examples/NotificationProductDeactivation'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmptySuccessResponse'
+              examples:
+                Success Response:
+                  value:
+                    data: {}
+  /1/products/{productId}/pricing-categories/:
+    get:
+      summary: Pricing Categories
+      operationId: get-pricing-categories
+      tags:
+        - Products
+      description:
+        $ref: 'description-pricing-categories.md'
+      parameters:
+        - schema:
+            type: string
+          in: path
+          name: productId
+          required: true
+          description: The ID of the requested product in the supplier’s system.
+          example: prod123
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PricingCategoriesResponse'
+  /1/suppliers/{supplierId}/products/:
+      get:
+        summary: Products List
+        operationId: get-supplier-products
+        tags:
+          - Products
+        description:
+          $ref: 'description-product-list.md'
+        parameters:
+          - schema:
+              type: string
+            in: path
+            name: supplierId
+            description: The Supplier ID of the supplier on the Partner platform (SRS).
+            required: true
+            example: "Abc123"
+        responses:
+          '200':
+            description: OK
+            content:
+              application/json:
+                schema:
+                  oneOf:
+                    - $ref: '#/components/schemas/SupplierProductsResponse'
+                    - $ref: '#/components/schemas/ProductsListErrorResponse'
+                examples:
+                  Success Response:
+                    value:
+                      data:
+                        supplierId: "supplier123"
+                        supplierName: "Supplier Name"
+                        products:
+                          - productId: "prod123"
+                            productTitle: "Product Title"
+                          - productId: "prod456"
+                            productTitle: "Another product Title"
+                  Error Response:
+                    value:
+                      errorCode: INVALID_SUPPLIER
+                      errorMessage: Supplier ID not found
+
+  /1/products/{productId}/addons/:
+    get:
+      summary: Fetch Addons
+      operationId: fetch-addons
+      tags:
+        - Addons
+      description:
+        $ref: 'description-addons.md'
+      parameters:
+        - name: productId
+          in: path
+          required: true
+          description: Product identifier in the Connectivity partner's system
+          example: 'PPYM1U'
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/AddonsResponse'
+                  - $ref: '#/components/schemas/AddonsErrorResponse'
+              examples:
+                Success Response:
+                  value:
+                    data:
+                      addons:
+                        - addonType: FOOD
+                          retailPrice: 1050
+                          currency: EUR
+                        - addonType: OTHERS
+                          retailPrice: 100
+                          currency: EUR
+                          addonDescription: Donation to support the local community
+                        - addonType: TRANSPORT
+                          retailPrice: 500
+                          currency: EUR
+                          addonDescription: Shuttle bus from the hotel
+                Error:
+                  value:
+                    errorCode: INVALID_PRODUCT
+                    errorMessage: This product does not exist
+  /1/products/{productId}:
+    get:
+      summary: Product Details
+      operationId: get-product-details
+      tags:
+        - Products
+      description:
+        $ref: 'description-product-details.md'
+      parameters:
+        - name: productId
+          in: path
+          required: true
+          description: Product identifier in the Connectivity partner's system
+          example: 'PPYM1U'
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/ProductDetailsResponse'
+                  - $ref: '#/components/schemas/ProductDetailsErrorResponse'
+              examples:
+                Success Response:
+                  value:
+                    data:
+                      supplierId: supplier123
+                      productTitle: Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+                      productDescription: Nunc pulvinar vulputate scelerisque...
+                      destinationLocation:
+                        city: Berlin
+                        country: DEU
+                      configuration:
+                        participantsConfiguration:
+                          min: 1
+                          max: 10
+                Error:
+                  value:
+                    errorCode: INVALID_PRODUCT
+                    errorMessage: This product does not exist
+components:
+  examples:
+    ErrorMaxParticipantSizeConstraint:
+      value:
+        errorCode: INVALID_PARTICIPANTS_CONFIGURATION
+        errorMessage: The activity requires a minimum of 4 participants
+        participantsConfiguration:
+          min: 4
+          max: null
+    ErrorMinParticipantSizeConstraint:
+      value:
+        errorCode: INVALID_PARTICIPANTS_CONFIGURATION
+        errorMessage: The activity cannot be reserved for more than 5 participants
+        participantsConfiguration:
+          min: 1
+          max: 5
+    ErrorGroupSizeConstraint:
+      value:
+        errorCode: INVALID_PARTICIPANTS_CONFIGURATION
+        errorMessage: The activity cannot be reserved for more than 5 participants per group; max 2 groups are allowed
+        participantsConfiguration:
+          min: 1
+          max: 5
+        groupConfiguration:
+          max: 2
+    NotificationProductDeactivation:
+      value:
+        data:
+          notificationType: PRODUCT_DEACTIVATION
+          description: GetYourGuide - Product ID - prod123 is deactivated due to API Error
+          supplierName: Mock Travel Agency
+          integrationName: Mock Reservation System
+          productDetails:
+            productId: prod123
+            gygTourOptionId: '123456'
+            tourOptionTitle: Mock Walking Tour in a Mock City
+          notificationDetails:
+            failedRequestType: reserve
+            deactivationTimestamp: '2022-09-28T14:54:10+02:00'
+            gygBookingReference: GYG2RA9W579V
+            travellers: '5x adult, 1x child, '
+            errorType: no_availability
+            errorMessageReceived: Requested timeslot is not available
+            vacanciesReceivedAfterGetAvailability: '99'
+            activityStartTime: '2022-09-30T00:00:00-04:00'
+            activityTimeZone: America/New_York
+          dateTime: '2022-09-28T16:34:33+02:00'
+  schemas:
+    Availability:
+      type: object
+      properties:
+        dateTime:
+          type: string
+          format: date-time
+          description: The date/time of the activity (ISO 8601). Content of the time part depends on the type (see time point vs time period).
+        vacancies:
+          type: integer
+          minimum: 0
+          description: |
+            For Individual ticket categories, this is the total number of vacancies across all categories for the requested product at the time slot specified in the dateTime field. If the product has “unlimited” availability please use a large value here. E.g. 5000. For GROUP products, this is the total number of available groups, not the total number of individual vacancies.
+
+            **Note** - The "vacancies" field has an internal GetYourGuide cap of "5000". If received vacancies exceed 5000 for any DateTimeslot, GetYourGuide will still cap the value to 5000
+        vacanciesByCategory:
+          type: array
+          description: |
+            For Individual ticket categories, this is the number of vacancies available for each ticket category for the requested product at the time slot specified in the dateTime field. For GROUP products, this isn't supported.
+          items:
+            $ref: '#/components/schemas/VacanciesByCategory'
+        cutoffSeconds:
+          type: integer
+          minimum: 0
+          description: Cut-off time expressed in seconds for the availability of a specific product (the time until which a product can be booked). This field can be 0
+        currency:
+          type: string
+          description: 'Code of the currency (ISO 4217), using alphabetic code and three characters in length. Must be a supported currency. Example: "EUR"'
+        pricesByCategory:
+          type: object
+          description: 'Object representing the prices of the product'
+          properties:
+            retailPrices:
+              type: array
+              description: 'List of retail prices per categories'
+              items:
+                type: object
+                properties:
+                  category:
+                    enum:
+                      - ADULT
+                      - CHILD
+                      - YOUTH
+                      - INFANT
+                      - SENIOR
+                      - STUDENT
+                      - EU_CITIZEN
+                      - MILITARY
+                      - EU_CITIZEN_STUDENT
+                      - GROUP
+                    description: The category for which the retail price is being provided.
+                    type: string
+                  price:
+                    type: integer
+                    minimum: 0
+                    description: 'Integer representation of the smallest unit of the currency. Example: 10.00 Euro should be 1000. Following currencies are exception - JPY, CLP, KRW, VND. For these currencies we expect the exact retail price. Example: 5000 JPY should be price 5000'
+                required:
+                  - category
+                  - price
+          required:
+            - retailPrices
+        tieredPricesByCategory:
+          type: object
+          description: 'Object representing the tiered prices of the product'
+          properties:
+            retailPrices:
+              type: array
+              description: 'List of tiered prices per categories'
+              items:
+                type: object
+                properties:
+                  category:
+                    enum:
+                      - ADULT
+                      - CHILD
+                      - YOUTH
+                      - INFANT
+                      - SENIOR
+                      - STUDENT
+                      - EU_CITIZEN
+                      - MILITARY
+                      - EU_CITIZEN_STUDENT
+                      - GROUP
+                    description: The category for which the retail price is being provided.
+                    type: string
+                    nullable: false
+                  tiers:
+                    type: array
+                    description: 'List of prices with tiers'
+                    nullable: false
+                    items:
+                      type: object
+                      properties:
+                        lowerBound:
+                          type: integer
+                          description: 'The minimum number of participants for this price tier. Inclusive.'
+                          nullable: false
+                        upperBound:
+                          type: integer
+                          description: 'The maximum number of participants for this price tier. Inclusive.'
+                          nullable: true
+                        price:
+                          type: integer
+                          description: 'Integer representation of the smallest unit of the currency. Example: 10.00 Euro should be 1000. Following currencies are exception - JPY, CLP, KRW, VND. For these currencies we expect the exact retail price. Example: 5000 JPY should be price 5000'
+                          nullable: false
+        openingTimes:
+          type: array
+          description: 'A list of opening times (from/to pairs) for time period product only. Should be in the format HH:MM'
+          items:
+            type: object
+            properties:
+              fromTime:
+                type: string
+                description: 'Example: "09:00"'
+              toTime:
+                type: string
+                description: 'Example: "12:00"'
+        productId:
+          type: string
+          description: The ID of the requested product in the supplier’s system that this availability refers to.
+      required:
+        - productId
+        - dateTime
+      oneOf:
+        - required:
+          - vacancies
+        - required:
+          - vacanciesByCategory
+    VacanciesByCategory:
+      type: object
+      required:
+        - category
+        - vacancies
+      properties:
+        category:
+          enum:
+            - ADULT
+            - CHILD
+            - YOUTH
+            - INFANT
+            - SENIOR
+            - STUDENT
+            - EU_CITIZEN
+            - MILITARY
+            - EU_CITIZEN_STUDENT
+          description: 'The ticket categories for which the availabilities is being provided.'
+          type: string
+        vacancies:
+          type: integer
+          minimum: 0
+          description: |
+            The number of vacancies available for the ticket Category.
+    AvailabilityResponse:
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            availabilities:
+              type: array
+              items:
+                $ref: '#/components/schemas/Availability'
+          required:
+            - availabilities
+      required:
+        - data
+    BookingCancellationRequest:
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            bookingReference:
+              type: string
+              description: 'An alphanumeric identifier for the booking in the supplier’s system. Maximum length of 25 characters. Example: GYG123JKE453-sf3321C'
+            gygBookingReference:
+              type: string
+              description: The reference of this booking in GetYourGuide’s system.
+            productId:
+              type: string
+              description: The ID of the requested product in the supplier’s system. Please avoid using the character `%` in the `productId`.
+          required:
+            - bookingReference
+            - gygBookingReference
+            - productId
+      required:
+        - data
+    ReservationBookingItem:
+      type: object
+      properties:
+        category:
+          $ref: '#/components/schemas/Category'
+        groupSize:
+          type: integer
+          description: 'Indicates the amount of pax per group, only provided in the context of a bookingItem of category type GROUP. The number of persons being reserved for the specified category. When bookingItems[].category is GROUP it must indicate the number of persons in that group.'
+        count:
+          type: integer
+          description: 'The number of persons being reserved for the specified category. When bookingItems[].category is GROUP this will always be 1. If we are reserving multiple groups we will add multiple bookingItems.'
+      required:
+        - category
+        - count
+    BookingItem:
+      type: object
+      properties:
+        category:
+          $ref: '#/components/schemas/Category'
+        groupSize:
+          type: integer
+          description: 'Indicates the amount of pax per group, only provided in the context of a bookingItem of category type GROUP. The number of persons being reserved for the specified category. When bookingItems[].category is GROUP it must indicate the number of persons in that group.'
+        count:
+          type: integer
+          description: 'The number of persons being reserved for the specified category. When bookingItems[].category is GROUP this will always be 1. If we are reserving multiple groups we will add multiple bookingItems.'
+        retailPrice:
+          type: integer
+          description: 'The basic retail price in the given currency that GetYourGuide charged the customer for one participant of this category during the booking process. This will be sent for all options, regardless of whether Price Over API is enabled. The received retailPrice must never be the reason to fail the booking request. If you observe a wrong price being sent, do not reject the booking and reach out to the Connectivity Support team.'
+      required:
+        - category
+        - count
+        - retailPrice
+    AddonItem:
+      type: object
+      properties:
+        addonType:
+          type: string
+          description: The Addon Type which is provided during booking.
+          enum:
+            - FOOD
+            - DRINKS
+            - SAFETY
+            - TRANSPORT
+            - DONATION
+            - OTHERS
+        addonDescription:
+          type: string
+          description: |
+            The description of the addon in your system. Max 50 characters. This field is optional but required and must be unique when multiple addons with the same addonType are present in the response.
+        count:
+          type: integer
+          description: 'The number of Addon being booked for the specified Addon.'
+        retailPrice:
+          type: integer
+          description: Integer representation of the smallest unit of the currency. F.e. 10.00 Euro should be 1000. Following currencies are exception - JPY, CLP, KRW, VND. For these currencies we expect the exact retail price. F.e. 5000 JPY should be price 5000.
+    BookingRequest:
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            productId:
+              type: string
+              description: The ID of the requested product in the supplier’s system. Please avoid using the character `%` in the `productId`.
+            reservationReference:
+              type: string
+              description: The identifier for the reservation in the supplier’s system as returned by the reserve call.
+            gygBookingReference:
+              type: string
+              description: The reference of this booking in GetYourGuide’s system.
+            gygActivityReference:
+              type: string
+              description: The reference of this activity in GetYourGuide’s system.
+            currency:
+              type: string
+              description: The currency of the retail prices in the request.
+            dateTime:
+              type: string
+              format: date-time
+              description: The date/time of the activity to be reserved (ISO 8601). The date/time of the activity (ISO 8601). Content of the time part is depending on the type (see time point vs time period above).
+            bookingItems:
+              type: array
+              items:
+                $ref: '#/components/schemas/BookingItem'
+              description: A list specifying the number of persons per category in this reservation. The data will be the same as in the corresponding field of the reservation call.
+            addonItems:
+              type: array
+              items:
+                $ref: '#/components/schemas/AddonItem'
+              description: A list of objects containing information about the addons of this booking.
+            language:
+              type: string
+              description: ISO 639-1 code of the language in which the product shall be booked.
+            travelers:
+              type: array
+              items:
+                $ref: '#/components/schemas/Traveler'
+              description:  |
+                A list of objects containing information about the travelers of this booking. The number of elements does not necessarily match the total indicated by the bookingItems parameter.
+                As a default, only the lead traveler is sent, unless set up differently on the Supplier Admin. In which case, the details of all other passengers are part of the Comment field.
+            travelerHotel:
+              type: string
+              description: The traveler’s hotel. This is provided to facilitate pickup where applicable.
+            comment:
+              type: string
+              description: |
+                Additional information provided by the traveler, e.g., [pick up](https://supplier-support.getyourguide.com/en/support/solutions/articles/15000030542-setting-meeting-point-and-pickup), dietary restrictions, weight, passport, etc. Please note this parameter could contain several thousand characters of unstructured data (free text).<br>
+                Note: this field will always be part of the request. If configured for this product on GetYourGuide it will be filled with the information required, otherwise it will be sent as a string containin only <code>"\n"</code>
+          required:
+            - productId
+            - reservationReference
+            - gygBookingReference
+            - currency
+            - dateTime
+            - bookingItems
+            - travelers
+            - comment
+    BookingResponse:
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            tickets:
+              type: array
+              items:
+                $ref: '#/components/schemas/Ticket'
+            bookingReference:
+              type: string
+              description: 'An alphanumeric identifier for the booking in the supplier’s system. Maximum length of 25 characters. Example: GYG123JKE453-sf3321C'
+          required:
+            - tickets
+            - bookingReference
+      required:
+        - data
+    PricingCategoriesResponse:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/GetPricingCategoriesSuccessResponse'
+      required:
+        - data
+    GetPricingCategoriesSuccessResponse:
+      type: object
+      properties:
+        pricingCategories:
+          type: array
+          items:
+            $ref: '#/components/schemas/CategoryConfiguration'
+    CategoryConfiguration:
+      type: object
+      properties:
+        category:
+          type: string
+          description: The category associated with this configuration
+          example: ADULT
+          nullable: false
+        minTicketAmount:
+          type: integer
+          description: The minimum amount of tickets for this category allowed in one booking.
+          example: 1
+          default: 1
+          nullable: true
+        maxTicketAmount:
+          type: integer
+          description: The maximum amount of tickets for this category allowed in one booking
+          example: 999
+          default: 999
+          nullable: true
+        groupSizeMin:
+          type: integer
+          description: The minimum amount of participants in one group
+          example: 1
+          nullable: true
+        groupSizeMax:
+          type: integer
+          description: The maximum amount of participants in one group
+          example: 5
+          nullable: true
+        ageFrom:
+          type: integer
+          description: The minimum age for a person to fall into this category. If no minimum applies, set to null
+          example: 18
+          nullable: true
+        ageTo:
+          type: integer
+          description: The maximum age for a person to fall into this category. If no maximum applies, set to null
+          example: 99
+          nullable: true
+        bookingCategory:
+          type: string
+          description: The booking type for this category. The default is STANDARD
+          example: STANDARD
+          nullable: true
+          default: STANDARD
+          enum:
+            - STANDARD
+            - FREE_NO_TICKET
+            - FREE_TICKET_REQUIRED
+            - NOT_PERMITTED
+        price:
+          type: array
+          nullable: true
+          items:
+            $ref: '#/components/schemas/Price'
+    Price:
+      type: object
+      description: An object containing price information
+      properties:
+        priceType:
+          type: string
+          description: The type of the price
+          example: RETAIL_PRICE
+          enum:
+            - RETAIL_PRICE
+          nullable: false
+        price:
+          type: integer
+          description: Integer representation of the smallest unit of the currency. F.e. 10.00 Euro should be 1000. Following currencies are exception - JPY, CLP, KRW, VND. For these currencies we expect the exact retail price. F.e. 5000 JPY should be price 5000
+          example: 1000
+          nullable: false
+        currency:
+          type: string
+          description: Code of the currency (ISO 4217), using alphabetic code and three characters in length. Must be a supported currency.
+          example: EUR
+          nullable: false
+    Category:
+      enum:
+        - ADULT
+        - CHILD
+        - YOUTH
+        - INFANT
+        - SENIOR
+        - STUDENT
+        - EU_CITIZEN
+        - MILITARY
+        - EU_CITIZEN_STUDENT
+        - GROUP
+      description: The category for which the number of persons is being provided.
+      type: string
+    CategoryCollective:
+      enum:
+        - ADULT
+        - CHILD
+        - YOUTH
+        - INFANT
+        - SENIOR
+        - STUDENT
+        - EU_CITIZEN
+        - MILITARY
+        - EU_CITIZEN_STUDENT
+        - GROUP
+        - COLLECTIVE
+      description: The category of the ticket. The returned categories must match the type and the count of requested items. Alternatively GetYourGuide accepts 1 (and only 1) `COLLECTIVE` ticket.
+      type: string
+    EmptySuccessResponse:
+      properties:
+        data:
+          type: object
+          properties: {}
+      type: object
+    ErrorResponseAvailability:
+      type: object
+      properties:
+        errorCode:
+          type: string
+          enum:
+            - AUTHORIZATION_FAILURE
+            - INVALID_PRODUCT
+            - VALIDATION_FAILURE
+            - INTERNAL_SYSTEM_FAILURE
+        errorMessage:
+          type: string
+      required:
+        - errorCode
+    ErrorResponseReservation:
+      type: object
+      properties:
+        errorCode:
+          type: string
+          enum:
+            - AUTHORIZATION_FAILURE
+            - INVALID_PRODUCT
+            - VALIDATION_FAILURE
+            - INVALID_TICKET_CATEGORY
+            - INTERNAL_SYSTEM_FAILURE
+            - NO_AVAILABILITY
+        errorMessage:
+          type: string
+      required:
+        - errorCode
+    ErrorParticipantSizeConstraint:
+      type: object
+      properties:
+        errorCode:
+          type: string
+          enum:
+            - INVALID_PARTICIPANTS_CONFIGURATION
+        errorMessage:
+          type: string
+        participantsConfiguration:
+          $ref: '#/components/schemas/ParticipantsConfiguration'
+      required:
+        - errorCode
+        - participantsConfiguration
+    ParticipantsConfiguration:
+      type: object
+      properties:
+        min:
+          type: integer
+          minimum: 1
+        max:
+          type: integer
+          minimum: 0
+          nullable: true
+      required:
+        - min
+        - max
+    ProductDetailsParticipantsConfiguration:
+      type: object
+      properties:
+        min:
+          type: integer
+          description:
+            $ref: 'description-product-details-participants-configuration-min.md'
+          default: 1
+          minimum: 1
+          nullable: true
+        max:
+          type: integer
+          description:
+            $ref: 'description-product-details-participants-configuration-max.md'
+          default: 999
+          nullable: true
+    ErrorGroupSizeConstraint:
+      type: object
+      properties:
+        errorCode:
+          type: string
+          enum:
+            - INVALID_PARTICIPANTS_CONFIGURATION
+        errorMessage:
+          type: string
+        participantsConfiguration:
+          $ref: '#/components/schemas/ParticipantsConfiguration'
+        groupConfiguration:
+          $ref: '#/components/schemas/GroupConfiguration'
+      required:
+        - errorCode
+        - participantsConfiguration
+        - groupConfiguration
+    GroupConfiguration:
+      type: object
+      properties:
+        max:
+          type: integer
+          minimum: 1
+          description: The maximum number of Groups allowed per booking.
+      required:
+        - max
+    ErrorResponseReservationCancellation:
+      type: object
+      properties:
+        errorCode:
+          type: string
+          enum:
+            - AUTHORIZATION_FAILURE
+            - INVALID_RESERVATION
+            - VALIDATION_FAILURE
+            - INTERNAL_SYSTEM_FAILURE
+        errorMessage:
+          type: string
+      required:
+        - errorCode
+    ErrorResponseBooking:
+      type: object
+      properties:
+        errorCode:
+          type: string
+          enum:
+            - AUTHORIZATION_FAILURE
+            - NO_AVAILABILITY
+            - INVALID_RESERVATION
+            - VALIDATION_FAILURE
+            - INVALID_TICKET_CATEGORY
+            - INTERNAL_SYSTEM_FAILURE
+            - INVALID_ADDONS_CONFIGURATION
+        errorMessage:
+          type: string
+      required:
+        - errorCode
+    ErrorResponseBookingCancellation:
+      type: object
+      properties:
+        errorCode:
+          type: string
+          enum:
+            - AUTHORIZATION_FAILURE
+            - INVALID_BOOKING
+            - VALIDATION_FAILURE
+            - INTERNAL_SYSTEM_FAILURE
+            - BOOKING_REDEEMED
+            - BOOKING_IN_PAST
+            - BOOKING_ALREADY_CANCELED
+        errorMessage:
+          type: string
+      required:
+        - errorCode
+    ReservationRequest:
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            productId:
+              type: string
+              description: The ID of the requested product in the supplier’s system. Please avoid using the character `%` in the `productId`.
+            dateTime:
+              type: string
+              format: date-time
+              description: The date/time of the activity to be reserved (ISO 8601). For the time period products, the time of the activity is always set to `00:00:00` of the requested travel date (see time point vs time period under [General Definitions](/documentation/overview#section/General-Definitions)).
+            bookingItems:
+              type: array
+              items:
+                $ref: '#/components/schemas/ReservationBookingItem'
+              description: A list specifying the number of persons per category in this reservation.
+            gygBookingReference:
+              type: string
+              description: The reference of this booking in GetYourGuide’s system.
+            gygActivityReference:
+              type: string
+              description: The reference of this activity in GetYourGuide’s system.
+          required:
+            - productId
+            - dateTime
+            - bookingItems
+            - gygBookingReference
+      required:
+        - data
+    ReservationCancellationRequest:
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            gygBookingReference:
+              type: string
+              description: The reference of this booking in GetYourGuide’s system.
+            reservationReference:
+              type: string
+              description: The identifier for the reservation in the supplier’s system as returned by the reserve call.
+            gygActivityReference:
+              type: string
+              description: The GYG tour option id which is getting cancelled
+          required:
+            - gygBookingReference
+            - reservationReference
+      required:
+        - data
+    ReservationResponse:
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            reservationReference:
+              type: string
+              nullable: false
+              description: The identifier for the reservation in the supplier’s system as returned by the reserve call.
+            reservationExpiration:
+              type: string
+              description:
+                $ref: 'description-reservationExpiration.md'
+              format: date-time
+          required:
+            - reservationReference
+      required:
+        - data
+    Ticket:
+      type: object
+      properties:
+        category:
+          $ref: '#/components/schemas/CategoryCollective'
+        ticketCode:
+          type: string
+          description: The ticket code.<br>
+            If the `TicketCodeType` is `BARCODE_CODE39`, `BARCODE_CODE128` or `ITF` the max lenght of the value is 80
+            characters.<br>
+            If the `TicketCodeType` is `EAN_13` the lenght of the value must be 12 or 13 characters
+            (lower & upper bound).<br>
+            For all the other `TicketCodeType` the max lenght of the value is 512 characters.
+          maxLength: 512
+        ticketCodeType:
+          $ref: '#/components/schemas/TicketCodeType'
+      required:
+        - category
+        - ticketCode
+        - ticketCodeType
+    TicketCodeType:
+      type: string
+      enum:
+        - TEXT
+        - BARCODE_CODE39
+        - BARCODE_CODE128
+        - QR_CODE
+        - DATA_MATRIX
+        - EAN_13
+        - ITF
+        - AZTEC
+      description: Indicates how the ticket code shall be rendered on the customer’s voucher.
+    Traveler:
+      type: object
+      properties:
+        firstName:
+          type: string
+          description: First name of the traveler.
+        lastName:
+          type: string
+          description: Last name of the traveler.
+        email:
+          type: string
+          description: Email address of the traveler
+        phoneNumber:
+          type: string
+          description: Phone number of the traveler
+      required:
+        - firstName
+        - lastName
+        - email
+        - phoneNumber
+    Notification:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/NotificationData'
+      required:
+        - data
+    NotificationData:
+      type: object
+      properties:
+        notificationType:
+          type: string
+          enum:
+            - PRODUCT_DEACTIVATION
+          example: "PRODUCT_DEACTIVATION"
+        description:
+          type: string
+          description: The description of the notification.
+          example: "GetYourGuide - Product ID - prod123 is deactivated due to API Error"
+        supplierName:
+          type: string
+          description: The supplier name of the affected product.
+          example: "Mock Travel Agency"
+        integrationName:
+          type: string
+          description: The name of the system that the affected product is connected to.
+          example: "Mock Reservation System"
+        dateTime:
+          type: string
+          format: date-time
+          description: The date/time when the notification is sent (ISO 8601).
+          example: "2022-09-28T16:34:33+02:00"
+        productDetails:
+          $ref: '#/components/schemas/NotificationDataProductDetails'
+        notificationDetails:
+          oneOf:
+            - $ref: '#/components/schemas/ProductDeactivationDataDetails'
+      required:
+        - notificationType
+        - description
+        - supplierName
+        - integrationName
+        - productDetails
+        - notificationDetails
+        - dateTime
+    NotificationDataProductDetails:
+      type: object
+      description: Details of the affected product.
+      properties:
+        productId:
+          type: string
+          description: The ID of the affected product in the supplier’s system.
+          example: "prod123"
+        gygTourOptionId:
+          type: string
+          description: The unique ID of the affected product (tour option) in the GYG’s system.
+          example: "123456"
+        tourOptionTitle:
+          type: string
+          description: The title of the affected product.
+          example: "Mock Walking Tour in a Mock City"
+      required:
+        - productId
+        - gygTourOptionId
+        - tourTitle
+    ProductDeactivationDataDetails:
+      type: object
+      description: The details of the notification, which could be different from one notification type to another. The properties shown below are the details for a specific notification type `PRODUCT_DEACTIVATION`, which is the only notification type GYG sends to the endpoint at the current moment.
+      properties:
+        failedRequestType:
+          type: string
+          description: The type of failed request that causes the pruduct deactivation.
+          example: "reserve"
+        deactivationTimestamp:
+          type: string
+          format: date-time
+          description: The date/time when the product is deacitvated in GYG's system (ISO 8601).
+          example: "2022-09-28T14:54:10+02:00"
+        gygBookingReference:
+          type: string
+          description: The booking reference of the failed request in GYG’s system.
+          example: "GYG2RA9W579V"
+        travellers:
+          type: string
+          description: The number of participants were reserved for the specified categories in the failed reservation request. Different ticket categories, e.g., adult and child, are separated using commas.
+          example: "5x adult, 1x child, "
+        errorType:
+          type: string
+          description: The error type received from your system in the response to the failed request.
+          example: "no_availability"
+        errorMessageReceived:
+          type: string
+          description: The error message received from your system to the failed request.
+          example: "Requested timeslot is not available"
+        vacanciesReceivedAfterGetAvailability:
+          type: string
+          description: The vacancies were received from your system during the get-availability check after the failed reservation request.
+          example: "99"
+        activityStartTime:
+          type: string
+          format: date-time
+          description: The start date/time of the requested product in the failed request (ISO 8601). The content of the time part depends on the type (see time point vs time period under [General Definitions](/documentation/overview#section/General-Definitions)).
+          example: "2022-09-30T00:00:00-04:00"
+        activityTimeZone:
+          type: string
+          description: The local timezone of the affected product.
+          example: "America/New_York"
+    ProductDetailsResponse:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/ProductDetailsResponseData'
+      required:
+        - data
+    ProductDetailsResponseData:
+      type: object
+      properties:
+        supplierId:
+          type: string
+          description: The Supplier ID of the supplier on the Partner platform (SRS).
+          example: supplier123
+        productTitle:
+          type: string
+          description: The name/Title of the product on the Partner platform (SRS). Must be maximum 512 characters long.
+          example: Walking tour in Berlin
+        productDescription:
+          type: string
+          description: The description of the product on the Partner platform (SRS). Must be maximum 512 characters long.
+          example: Proin congue venenatis ante et tempor. Etiam eget feugiat nisl. Praesent at massa...
+        destinationLocation:
+          $ref: '#/components/schemas/DestinationLocation'
+        configuration:
+          $ref: '#/components/schemas/ProductConfiguration'
+      required:
+        - supplierId
+        - productTitle
+        - destinationLocation
+    DestinationLocation:
+      type: object
+      properties:
+        city:
+          type: string
+          description: The city in which the product is located. Must be in UN/LOCODE NameWoDiacritics format.
+          example: Berlin
+        country:
+          type: string
+          description: The country in which the product is located. Must be in ISO 3166-1 alpha-3 format.
+          example: DEU
+      required:
+        - city
+        - country
+    ProductConfiguration:
+      type: object
+      properties:
+        participantsConfiguration:
+          $ref: '#/components/schemas/ProductDetailsParticipantsConfiguration'
+    ProductDetailsErrorResponse:
+      type: object
+      properties:
+        errorCode:
+          type: string
+          enum:
+            - AUTHORIZATION_FAILURE
+            - INVALID_PRODUCT
+            - INTERNAL_SYSTEM_FAILURE
+        errorMessage:
+          type: string
+      required:
+        - errorCode
+    SupplierProductsResponse:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/SupplierProductsResponseData'
+      required:
+        - data
+    SupplierProductsResponseData:
+      type: object
+      properties:
+        supplierId:
+          type: string
+          description: The Supplier ID of the supplier on the Partner platform (SRS).
+        supplierName:
+          type: string
+          description: The name of the supplier on the Partner platform (SRS). Must be maximum 512 characters long.
+        products:
+          type: array
+          items:
+            $ref: '#/components/schemas/SupplierProduct'
+      required:
+        - supplierId
+        - products
+    SupplierProduct:
+      type: object
+      properties:
+        productId:
+          type: string
+          description: The ID of the product A on the Partner platform (SRS).
+        productTitle:
+          type: string
+          description: The name of the product A on the Partner platform (SRS). Must be maximum 512 characters long.
+      required:
+        - productId
+        - productTitle
+    ProductsListErrorResponse:
+      type: object
+      properties:
+        errorCode:
+          type: string
+          enum:
+            - AUTHORIZATION_FAILURE
+            - INTERNAL_SYSTEM_FAILURE
+            - INVALID_SUPPLIER
+        errorMessage:
+          type: string
+      required:
+        - errorCode
+    AddonsResponse:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/GetAddonsSuccessResponse'
+      required:
+        - data
+    GetAddonsSuccessResponse:
+      type: object
+      description: A successful data response containing addons list information
+      properties:
+        addons:
+          type: array
+          nullable: false
+          description: List of all valid addons for a product. If no addons are available for the product, the list should be empty.
+          items:
+            $ref: '#/components/schemas/Addon'
+      required:
+        - addons
+    Addon:
+      type: object
+      properties:
+        addonType:
+          type: string
+          description: The Addon Type which is provided during booking.
+          enum:
+            - FOOD
+            - DRINKS
+            - SAFETY
+            - TRANSPORT
+            - DONATION
+            - OTHERS
+          example: OTHERS
+          nullable: false
+        retailPrice:
+          type: integer
+          description: Integer representation of the smallest unit of the currency. F.e. 10.00 Euro should be 1000. Following currencies are exception - JPY, CLP, KRW, VND. For these currencies we expect the exact retail price. F.e. 5000 JPY should be price 5000.
+          example: 1000
+          nullable: false
+          minimum: 0
+        currency:
+          type: string
+          description: Code of the currency (ISO 4217), using alphabetic code and three characters in length. Must be a supported currency.
+          example: EUR
+          nullable: false
+        addonDescription:
+          type: string
+          description: |
+            The description of the addon in your system. Max 50 characters. This field is optional but required and must be unique when multiple addons with the same addonType are present in the response.
+          example: Bike helmet
+          maxLength: 50
+      required:
+        - addonType
+        - retailPrice
+        - currency
+    AddonsErrorResponse:
+      type: object
+      properties:
+        errorCode:
+          type: string
+          enum:
+            - AUTHORIZATION_FAILURE
+            - INVALID_PRODUCT
+            - INTERNAL_SYSTEM_FAILURE
+        errorMessage:
+          type: string
+      required:
+        - errorCode
+  securitySchemes:
+    BasicAuth:
+      type: http
+      scheme: basic
+tags:
+  - name: Availability
+  - name: Reservations
+  - name: Bookings
+  - name: Products
+  - name: Notification
+  - name: Tiered Pricing
+    description: "# Scope for this release\n\n* Enable Tiered pricing for connected products.\n* Manual setup of pricing tiers on the supplier portal.\n  * Suppliers need to manually setup the Tiers definition on the supplier portal while configuring their product\n* Static Tier definitions\n  * The Scales (1-5, 6-10, 11-15…..) will remain static for the particular option and can only be edited manually\n* Tiers have to be same across all Pricing categories\n  * For an option with 3 pricing categories (Infant, Child and Adult), all the relevant categories would need to have\n    the same Tier definition\n\n#### Tiers Definition\n\n|        |      |       |       |\n|--------|------|-------|-------|\n| Adult  | 1-10 | 11-20 | 21-30 |\n| Child  | 1-10 | 11-20 | 21-30 |\n| Infant | 1-10 | 11-20 | 21-30 |\n\n# Notable changes\n\nIn the updated API spec, for both Get_Availability and Notify_Availability, we have an additional optional object for Tiered prices - `tieredPricesByCategory`\nThis object complements the existing `pricesByCategory` in design and functionality\n\nOnce an integrator has implemented, tested and enabled Tiered prices over API for their connection, then they can already start sending us Tired prices (as part of the `tieredPricesByCategory` object) in addition to the values in the  `pricesByCategory` object)\n\nUntil the supplier explicitly approves consuming tiered prices over API, GYG will not consume the data in `tieredPricesByCategory` object and the pricing will continue to remain as setup by the supplier (manual prices (or) Price over API)\nOnce the supplier explicitly approves consuming Tiered prices from their reservation system, is when GYG starts consuming the Tiered prices from the `tieredPricesByCategory` object\n\n# How Would Suppliers use this?\n\nOn the product creation flow, under the pricing section we would have additional settings for a supplier to enable Tiered\n* On the pricing page suppliers will have 2 options\n  * (Already existing setting) Do you want to apply the prices that you have specified in your reservation system?\n    * Yes/No\n  * (New Setting) Does your product have tiered pricing?\n    * Yes/No\n\nTo enable Tiered prices over API, a supplier would have to select Yes for both questions\n* Next, the supplier would need to define tiers that they want to set up\n  * The tiers are static and have to be manually added by the supplier\n  * The tiers will be same across all different pricing categories\n* Once the supplier has setup the Tiers, they can click on save and continue to finish the setup\n\n"
+  - name: Addons
+    description: "# Scope of the Release\n\n* Only support AddOns with no associated capacity (or) availability\n  * AddOns cannot have an availability of their own (or) SRS shouldn’t reject the addons due to no availability on the AddOns\n* AddOns can only be consumed and setup directly from the SRS (via Fetch AddOns over API) and not be manually created on the supplier portal\n  * SRS will act as the sole source of truth of AddOns for GetYourGuide; as part of the AddOn setup - Whatever AddOns we receive as part of the Fetch AddOns over API response will be set on GetYourGuide, with suppliers having the flexibility to modify the prices\n* AddOn prices are not part of Prices over API (will not be auto-updated), to change prices, suppliers will have to come on to the portal and either manually update the prices (or) import the addons from the SRS again\n\n # How would suppliers use this\n On the product creation flow, we have a new section for AddOns, where\n* If a connected partner supports AddOns with GetYourGuide, their suppliers will be able to configure AddOns\n* On the AddOns screen, Suppliers can explicitly confirm if they want to setup Addons\n* Once a supplier selects “yes”, the Fetch_AddOns endpoint is called and we import the details of addOns from our partners\n* The supplier cannot remove any addon (nor) add any new addon apart from the one imported from the SRS\n* The only action permitted to the supplier is to edit the price\n* Once the supplier is done reviewing their AddOns, they click on save and validate and the addons are saved\n\n"
+  - name: Availability By Ticket Category
+    description:
+      $ref: 'description-availability-by-ticket-category.md'
+  - name: 🆕 Live Availability and Pricing
+    description:
+      $ref: 'description-live-Availability-and-pricing.md'

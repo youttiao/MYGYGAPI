@@ -15,6 +15,7 @@ model Product {
   description        String
   timezone           String
   currency           String
+  pricingMode        String           @default("MANUAL_IN_GYG")
   status             String           @default("active")
   destinationCity    String           @default("Unknown")
   destinationCountry String           @default("DEU")

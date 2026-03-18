@@ -200,11 +200,6 @@ export class BookingService {
       Array.isArray(product.pricingCategories) && product.pricingCategories.length > 0
         ? product.pricingCategories.map((row: any) => row.category)
         : [];
-    const categoriesFromPrices = Array.isArray((slot as any)?.pricesByCategory?.retailPrices)
-      ? (slot as any).pricesByCategory.retailPrices
-          .map((row: any) => row?.category)
-          .filter((v: unknown) => typeof v === 'string')
-      : [];
     const categoriesFromVacancies = Array.isArray(slot?.vacanciesByCategory)
       ? (slot?.vacanciesByCategory as any[])
           .map((row: any) => row?.category)
@@ -212,7 +207,6 @@ export class BookingService {
       : [];
     const validCategories = new Set([
       ...categoriesFromConfig,
-      ...categoriesFromPrices,
       ...categoriesFromVacancies
     ]);
     if (validCategories.size > 0) {
@@ -323,6 +317,26 @@ export class BookingService {
       return { errorCode: 'INVALID_RESERVATION', errorMessage: 'Reservation not found' };
     }
 
+    const existing = await this.bookingRepo.findBookingByGygBookingReference(input.gygBookingReference);
+    if (existing) {
+      const incomingItems = JSON.stringify(normalizeBookingItems(input.bookingItems));
+      const existingItems = JSON.stringify(
+        normalizeBookingItems((existing.bookingItems as Array<{ category: string; count: number }>) ?? [])
+      );
+      const samePayload =
+        existing.reservation?.reservationReference === input.reservationReference &&
+        existing.dateTime.getTime() === new Date(input.dateTime).getTime() &&
+        existingItems === incomingItems;
+      if (samePayload) {
+        return {
+          data: {
+            bookingReference: existing.bookingReference,
+            tickets: existing.tickets
+          }
+        };
+      }
+    }
+
     if (reservation.status !== 'created') {
       return { errorCode: 'INVALID_RESERVATION', errorMessage: 'Reservation not active' };
     }
@@ -345,21 +359,21 @@ export class BookingService {
 
     const maxAttempts = 4;
     for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
-      const existing = await this.bookingRepo.findBookingByGygBookingReference(input.gygBookingReference);
-      if (existing) {
+      const retryExisting = await this.bookingRepo.findBookingByGygBookingReference(input.gygBookingReference);
+      if (retryExisting) {
         const incomingItems = JSON.stringify(normalizeBookingItems(input.bookingItems));
         const existingItems = JSON.stringify(
-          normalizeBookingItems((existing.bookingItems as Array<{ category: string; count: number }>) ?? [])
+          normalizeBookingItems((retryExisting.bookingItems as Array<{ category: string; count: number }>) ?? [])
         );
         const samePayload =
-          existing.reservation?.reservationReference === input.reservationReference &&
-          existing.dateTime.getTime() === new Date(input.dateTime).getTime() &&
+          retryExisting.reservation?.reservationReference === input.reservationReference &&
+          retryExisting.dateTime.getTime() === new Date(input.dateTime).getTime() &&
           existingItems === incomingItems;
         if (samePayload) {
           return {
             data: {
-              bookingReference: existing.bookingReference,
-              tickets: existing.tickets
+              bookingReference: retryExisting.bookingReference,
+              tickets: retryExisting.tickets
             }
           };
         }

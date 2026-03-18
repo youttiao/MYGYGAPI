@@ -79,6 +79,7 @@ export class ProductRepository {
       participantsMax?: number;
       groupSizeMin?: number;
       groupSizeMax?: number;
+      pricingMode?: 'MANUAL_IN_GYG' | 'PRICE_OVER_API';
     }
   ) {
     if (
@@ -110,7 +111,8 @@ export class ProductRepository {
       data: {
         autoCloseHours: settings.autoCloseHours,
         participantsMin: settings.participantsMin,
-        participantsMax: settings.participantsMax
+        participantsMax: settings.participantsMax,
+        pricingMode: settings.pricingMode
       },
       include: {
         pricingCategories: true,

@@ -7,6 +7,7 @@ export const createProductBodySchema = z.object({
   description: z.string().min(1),
   timezone: z.string().min(1),
   currency: z.string().length(3),
+  pricingMode: z.enum(['MANUAL_IN_GYG', 'PRICE_OVER_API']).default('MANUAL_IN_GYG'),
   status: z.enum(['active', 'inactive']).default('active'),
   destinationCity: z.string().default('Berlin'),
   destinationCountry: z.string().length(3).default('DEU'),
@@ -136,7 +137,8 @@ export const adminProductSettingsBodySchema = z
     participantsMin: z.number().int().positive().optional(),
     participantsMax: z.number().int().positive().optional(),
     groupSizeMin: z.number().int().positive().optional(),
-    groupSizeMax: z.number().int().positive().optional()
+    groupSizeMax: z.number().int().positive().optional(),
+    pricingMode: z.enum(['MANUAL_IN_GYG', 'PRICE_OVER_API']).optional()
   })
   .refine(
     (value) =>
@@ -144,7 +146,8 @@ export const adminProductSettingsBodySchema = z
       value.participantsMin !== undefined ||
       value.participantsMax !== undefined ||
       value.groupSizeMin !== undefined ||
-      value.groupSizeMax !== undefined,
+      value.groupSizeMax !== undefined ||
+      value.pricingMode !== undefined,
     { message: 'At least one settings field must be provided' }
   );
 

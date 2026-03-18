@@ -48,7 +48,8 @@ const gygRoutes: FastifyPluginAsync = async (fastify) => {
       return {
         data: {
           availabilities: availabilities.map((item: any) => {
-            const rawPrices = item.pricesByCategory?.retailPrices;
+            const shouldExposePrices = item.product?.pricingMode === 'PRICE_OVER_API';
+            const rawPrices = shouldExposePrices ? item.pricesByCategory?.retailPrices : undefined;
             const normalizedPrices = Array.isArray(rawPrices)
               ? rawPrices.filter(
                   (row: any) =>
@@ -59,17 +60,15 @@ const gygRoutes: FastifyPluginAsync = async (fastify) => {
                 )
               : [];
             const hasGroupCategory = normalizedPrices.some((row: any) => row.category === 'GROUP');
-            const prices = hasGroupCategory
-              ? normalizedPrices.filter((row: any) => row.category === 'GROUP')
-              : normalizedPrices;
             const pricesByCategory =
-              prices.length > 0
+              normalizedPrices.length > 0
                 ? {
-                    retailPrices: prices
+                    retailPrices: hasGroupCategory
+                      ? normalizedPrices.filter((row: any) => row.category === 'GROUP')
+                      : normalizedPrices
                   }
                 : undefined;
             const openingTimes = Array.isArray(item.openingTimes) ? item.openingTimes : undefined;
-            const isTimePeriod = Array.isArray(openingTimes) && openingTimes.length > 0;
 
             const finalVacanciesByCategory = hasGroupCategory
               ? null
@@ -83,9 +82,9 @@ const gygRoutes: FastifyPluginAsync = async (fastify) => {
               cutoffSeconds: item.cutoffSeconds,
               vacancies: includeVacancies ? item.vacancies : undefined,
               vacanciesByCategory: finalVacanciesByCategory,
-              currency: item.currency,
+              currency: shouldExposePrices ? item.currency : undefined,
               pricesByCategory,
-              tieredPricesByCategory: item.tieredPricesByCategory
+              tieredPricesByCategory: shouldExposePrices ? item.tieredPricesByCategory : undefined
             };
           })
         }

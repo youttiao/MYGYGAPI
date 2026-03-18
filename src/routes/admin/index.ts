@@ -129,7 +129,8 @@ const adminRoutes: FastifyPluginAsync = async (fastify) => {
         participantsMin: body.participantsMin,
         participantsMax: body.participantsMax,
         groupSizeMin: body.groupSizeMin,
-        groupSizeMax: body.groupSizeMax
+        groupSizeMax: body.groupSizeMax,
+        pricingMode: body.pricingMode
       });
       return { data: updated };
     }

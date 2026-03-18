@@ -15,6 +15,7 @@ export class ProductService {
     description: string;
     timezone: string;
     currency: string;
+    pricingMode?: 'MANUAL_IN_GYG' | 'PRICE_OVER_API';
     status: 'active' | 'inactive';
     destinationCity: string;
     destinationCountry: string;
@@ -47,6 +48,7 @@ export class ProductService {
         description: input.description,
         timezone: input.timezone,
         currency: input.currency,
+        pricingMode: input.pricingMode ?? 'MANUAL_IN_GYG',
         status: input.status,
         destinationCity: input.destinationCity,
         destinationCountry: input.destinationCountry,
@@ -83,6 +85,7 @@ export class ProductService {
       participantsMax?: number;
       groupSizeMin?: number;
       groupSizeMax?: number;
+      pricingMode?: 'MANUAL_IN_GYG' | 'PRICE_OVER_API';
     }
   ) {
     return this.repo.updateSettings(id, settings);

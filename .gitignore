@@ -7,3 +7,4 @@ dist/
 *.db-journal
 __pycache__/
 .DS_Store
+UI-reference/tabler/

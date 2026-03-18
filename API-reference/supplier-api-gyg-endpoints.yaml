@@ -1,0 +1,1289 @@
+openapi: 3.0.0
+info:
+  title: Supplier API - GetYourGuide Endpoints
+  version: '1.0'
+  description:
+    $ref: 'description-gyg-endpoints.md'
+servers:
+  - url: 'https://supplier-api.getyourguide.com'
+    description: Production
+security:
+  - BasicAuth: [ ]
+paths:
+  /1/notify-availability-update:
+    post:
+      tags:
+        - Notify Availability
+      responses:
+        '202':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotifyAvailabilityUpdateResponse'
+              examples:
+                Response Sample:
+                  value:
+                    data:
+                      message: Availability Update Accepted
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/400-BadRequest'
+              examples:
+                Invalid Product:
+                  value:
+                    errorCode: INVALID_PRODUCT
+                    errorMessage: Provided productId did not match an existing product in our system
+                Validation Failure:
+                  value:
+                    errorCode: VALIDATION_FAILURE
+                    errorMessage: Invalid JSON received
+                Internal System Failure:
+                  value:
+                    errorCode: INTERNAL_SYSTEM_FAILURE
+                    errorMessage: Incorrect credentials provided
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/401-Unauthorized'
+              examples:
+                'Authorization Failure':
+                  value:
+                    errorCode: AUTHORIZATION_FAILURE
+                    errorMessage: Incorrect Credentials provided
+        '429':
+          description: TooManyRequests - The request was rejected due to our rate-limiting policies.
+      operationId: post-notify-availability-update
+      summary: Notify Availability Update
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NotifyAvailabilityUpdateRequest'
+            examples:
+              Time Point Product:
+                value:
+                  data:
+                    productId: prod123
+                    availabilities:
+                      - dateTime: '2020-12-01T10:00:00+02:00'
+                        vacancies: 0
+                      - dateTime: '2020-12-01T15:00:00+02:00'
+                        vacancies: 1
+              Time Point Product - Price Over API:
+                value:
+                  data:
+                    productId: prod123
+                    availabilities:
+                      - dateTime: '2020-12-01T10:00:00+02:00'
+                        vacancies: 0
+                        currency: 'EUR'
+                        pricesByCategory:
+                          retailPrices:
+                            - category: 'ADULT'
+                              price: 1500
+                            - category: 'CHILD'
+                              price: 1000
+                      - dateTime: '2020-12-01T15:00:00+02:00'
+                        vacancies: 1
+                        currency: 'EUR'
+                        pricesByCategory:
+                          retailPrices:
+                            - category: 'ADULT'
+                              price: 1500
+                            - category: 'CHILD'
+                              price: 1000
+              Time Point Product - Tiered Pricing Over API:
+                value:
+                  data:
+                    productId: prod123
+                    availabilities:
+                      - dateTime: '2020-12-01T15:00:00+02:00'
+                        vacancies: 1
+                        currency: 'EUR'
+                        tieredPricesByCategory:
+                          retailPrices:
+                            - category: 'ADULT'
+                              tiers:
+                                - lowerBound: 1
+                                  upperBound: 5
+                                  price: 1600
+                                - lowerBound: 6
+                                  upperBound: 10
+                                  price: 1500
+                            - category: 'CHILD'
+                              tiers:
+                                - lowerBound: 1
+                                  upperBound: 5
+                                  price: 1100
+                                - lowerBound: 6
+                                  upperBound: 10
+                                  price: 1000
+              Time Point Product - Availability By Ticket Category:
+                value:
+                  data:
+                    productId: prod123
+                    availabilities:
+                      - dateTime: '2020-12-01T15:00:00+02:00'
+                        currency: 'EUR'
+                        vacanciesByCategory:
+                          - category: 'ADULT'
+                            vacancies: 1
+                          - category: 'CHILD'
+                            vacancies: 1
+              Time Period Product:
+                value:
+                  data:
+                    productId: prod123
+                    availabilities:
+                      - dateTime: '2020-12-01T00:00:00+02:00'
+                        openingTimes:
+                          - fromTime: '09:00'
+                            toTime: '18:00'
+                        vacancies: 0
+                      - dateTime: '2020-12-02T00:00:00+02:00'
+                        openingTimes:
+                          - fromTime: '09:00'
+                            toTime: '12:00'
+                        vacancies: 1
+              Time Period Product - Price Over API:
+                value:
+                  data:
+                    productId: prod123
+                    availabilities:
+                      - dateTime: '2020-12-01T00:00:00+02:00'
+                        openingTimes:
+                          - fromTime: '09:00'
+                            toTime: '18:00'
+                        vacancies: 0
+                        currency: 'EUR'
+                        pricesByCategory:
+                          retailPrices:
+                            - category: 'ADULT'
+                              price: 1500
+                            - category: 'CHILD'
+                              price: 1000
+                      - dateTime: '2020-12-02T00:00:00+02:00'
+                        openingTimes:
+                          - fromTime: '09:00'
+                            toTime: '12:00'
+                        vacancies: 1
+                        currency: 'EUR'
+                        pricesByCategory:
+                          retailPrices:
+                            - category: 'ADULT'
+                              price: 1500
+                            - category: 'CHILD'
+                              price: 1000
+              Time Period Product - Tiered Pricing Over API:
+                value:
+                  data:
+                    productId: prod123
+                    availabilities:
+                      - dateTime: '2020-12-02T00:00:00+02:00'
+                        openingTimes:
+                          - fromTime: '09:00'
+                            toTime: '12:00'
+                        vacancies: 1
+                        currency: 'EUR'
+                        tieredPricesByCategory:
+                          retailPrices:
+                            - category: 'ADULT'
+                              tiers:
+                                - lowerBound: 1
+                                  upperBound: 5
+                                  price: 1600
+                                - lowerBound: 6
+                                  upperBound: 10
+                                  price: 1500
+                            - category: 'CHILD'
+                              tiers:
+                                - lowerBound: 1
+                                  upperBound: 5
+                                  price: 1100
+                                - lowerBound: 6
+                                  upperBound: 10
+                                  price: 1000
+              Time Period Product - Availability By Ticket Category:
+                value:
+                  data:
+                    productId: prod123
+                    availabilities:
+                      - dateTime: '2020-12-02T00:00:00+02:00'
+                        openingTimes:
+                          - fromTime: '09:00'
+                            toTime: '12:00'
+                        currency: 'EUR'
+                        vacanciesByCategory:
+                          - category: 'ADULT'
+                            vacancies: 1
+                          - category: 'CHILD'
+                            vacancies: 1
+
+  /1/products/{GYG-Option-ID}/activate:
+    patch:
+      tags:
+        - Products
+      parameters:
+        - name: "GYG-Option-ID"
+          in: "path"
+          description: "The unique GetYourGuide Option ID of the product that you wish to reactivate."
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReactivateProductResponse'
+              examples:
+                Response Sample:
+                  value:
+                    data:
+                      message: GYG-Option-ID reactivated successfully with externalProductId {external-product-id}
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/400-BadRequest'
+              examples:
+                Validation Failure:
+                  value:
+                    errorCode: VALIDATION_FAILURE
+                    errorMessage: Invalid JSON received
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/401-Unauthorized'
+              examples:
+                'Authorization Failure':
+                  value:
+                    errorCode: AUTHORIZATION_FAILURE
+                    errorMessage: Incorrect credentials provided
+        '404':
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/404-NotFound'
+              examples:
+                Invalid Product:
+                  value:
+                    errorCode: INVALID_PRODUCT
+                    errorMessage: Provided GetYourGuide Option ID did not match an existing option in our system
+        '429':
+          description: TooManyRequests - The request was rejected due to our rate-limiting policies.
+        '500':
+          description: Internal System Failure
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/500-internal-server-error'
+              examples:
+                'Internal System Failure':
+                  value:
+                    errorCode: INTERNAL_SYSTEM_FAILURE
+                    errorMessage: Internal System Failure. Please contact Connectivity Support.
+      operationId: patch-reactivate-product
+      summary: Reactivate a Deactivated Product
+      description:
+        $ref: 'description-reactivation.md'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReactivateProductRequest'
+            examples:
+              Sample request:
+                value:
+                  data:
+                    externalProductId: prod123
+  /1/redeem-ticket:
+    post:
+      summary: Ticket Redemption by Ticket Code
+      operationId: post-redeem-ticket
+      tags:
+        - Redemption
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RedemptionSuccessResponse'
+              examples:
+                Success Response:
+                  $ref: '#/components/examples/Success'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/400-BadRequest'
+              examples:
+                Ticket Already Redeemed:
+                  value:
+                    errorCode: VALIDATION_FAILURE
+                    errorMessage: 'ticket code TICKET238 is already redeemed'
+                Validation Failure:
+                  value:
+                    errorCode: VALIDATION_FAILURE
+                    errorMessage: 'Parameter cannot be empty or contains only spaces'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/401-Unauthorized'
+              examples:
+                Authorization Failure:
+                  value:
+                    errorCode: AUTHORIZATION_FAILURE
+                    errorMessage: 'No permission to redeem ticket code: TICKET238'
+        '404':
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/404-NotFound'
+              examples:
+                Resoure Not Found:
+                  value:
+                    errorCode: RESOURCE_NOT_FOUND
+                    errorMessage: 'Invalid ticket code TICKET238'
+        '500':
+          description: Internal System Failure
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/500-internal-server-error'
+              examples:
+                Internal System Failure:
+                  value:
+                    errorCode: INTERNAL_SYSTEM_FAILURE
+                    errorMessage: 'An unexpected internal system failure occurred. Please try again later or contact support for assistance.'
+      description: This endpoint should be called by the supplier when a ticket is redeemed by a customer. The response will indicate the success or failure of ticket redemption process.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RedemptionTicketCodeRequest'
+            examples:
+              Request Sample:
+                value:
+                  data:
+                    ticketCode: TICKET238
+                    gygBookingReference: GYG1B2D34GHI
+  /1/redeem-booking:
+    post:
+      summary: Ticket Redemption by Booking Reference
+      operationId: post-redeem-booking
+      tags:
+        - Redemption
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RedemptionSuccessResponse'
+              examples:
+                Success Response:
+                  $ref: '#/components/examples/Success'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/400-BadRequest'
+              examples:
+                Booking Already Redeemed:
+                  value:
+                    errorCode: VALIDATION_FAILURE
+                    errorMessage: 'ticket(s) of booking reference GYG1B2D34GHI is/are already redeemed'
+                Validation Failure:
+                  value:
+                    errorCode: VALIDATION_FAILURE
+                    errorMessage: 'Parameter cannot be empty or contains only spaces'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/401-Unauthorized'
+              examples:
+                Authorization Failure:
+                  value:
+                    errorCode: AUTHORIZATION_FAILURE
+                    errorMessage: 'No permission to redeem booking reference: GYG1B2D34GHI'
+        '404':
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/404-NotFound'
+              examples:
+                Resoure Not Found:
+                  value:
+                    errorCode: RESOURCE_NOT_FOUND
+                    errorMessage: 'Invalid booking reference GYG1B2D34GHI'
+        '500':
+          description: Internal System Failure
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/500-internal-server-error'
+              examples:
+                Internal System Failure:
+                  value:
+                    errorCode: INTERNAL_SYSTEM_FAILURE
+                    errorMessage: 'An unexpected internal system failure occurred. Please try again later or contact support for assistance.'
+      description: 'This endpoint should be called by the supplier when all the tickets of a booking are redeemed by the customer.<br><br>Calling this endpoint will result in all tickets of the booking to be marked as redeemed.<br><br>The response will indicate the success or failure of ticket redemption process'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RedemptionBookingReferenceRequest'
+            examples:
+              Request Sample:
+                value:
+                  data:
+                    gygBookingReference: GYG1B2D34GHI
+  /1/deals:
+    get:
+      summary: List Deals
+      operationId: get-deals
+      tags:
+        - Deals
+      parameters:
+        - name: "externalProductId"
+          in: "query"
+          required: true
+          description: The ID of the product in the partner's system
+          example: 'PPYM1U'
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetDealsSuccessResponse'
+              examples:
+                Response Sample:
+                  value:
+                    deals:
+                      - dealId: 36457
+                        dealName: 'Last minute deal'
+                        dateRange:
+                          start: '2023-08-21'
+                          end: '2023-08-31'
+                        dealType: last_minute
+                        maxVacancies: 10
+                        discountPercentage: 10.5
+                        gygTourOptionId: 3764930
+                      - dealId: 285950
+                        dealName: 'Early bird deal'
+                        dateRange:
+                          start: '2023-12-21'
+                          end: '2023-12-31'
+                        dealType: early_bird
+                        maxVacancies: 5
+                        discountPercentage: 12.5
+                        gygTourOptionId: 927383
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/400-BadRequest'
+              examples:
+                Invalid Product:
+                  value:
+                    errorCode: INVALID_PRODUCT
+                    errorMessage: 'Invalid or Inactive product id PPYM1U'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/401-Unauthorized'
+              examples:
+                Authorization Failure:
+                  value:
+                    errorCode: AUTHORIZATION_FAILURE
+                    errorMessage: 'DealsOverApi feature is not enabled, This feature can be enabled after passing the Deals Over Api self-testing in Integrator Portal'
+        '500':
+          description: Internal System Failure
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/500-internal-server-error'
+              examples:
+                Internal System Failure:
+                  value:
+                    errorCode: INTERNAL_SYSTEM_FAILURE
+                    errorMessage: 'An unexpected error occurred. Please check your request data for correctness and accordance with our API.'
+      description: 'The list deals endpoint allows you to list all existing deals for a product. This endpoint will only list deals that were created via API.'
+    post:
+      summary: Create a Deal
+      operationId: create-deal
+      tags:
+        - Deals
+      responses:
+        '201':
+          description: CREATED
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateDealSuccessResponse'
+              examples:
+                Response Sample:
+                  value:
+                    deals:
+                      - dealId: 36457
+                        gygTourOptionId: 3764930
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/400-BadRequest'
+              examples:
+                Invalid Product:
+                  value:
+                    errorCode: INVALID_PRODUCT
+                    errorMessage: 'Invalid or Inactive product id PPYM1U'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/401-Unauthorized'
+              examples:
+                Authorization Failure:
+                  value:
+                    errorCode: AUTHORIZATION_FAILURE
+                    errorMessage: 'DealsOverApi feature is not enabled, This feature can be enabled after passing the Deals Over Api self-testing in Integrator Portal'
+        '500':
+          description: Internal System Failure
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/500-internal-server-error'
+              examples:
+                Internal System Failure:
+                  value:
+                    errorCode: INTERNAL_SYSTEM_FAILURE
+                    errorMessage: 'An unexpected error occurred. Please check your request data for correctness and accordance with our API.'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateDealRequest'
+            examples:
+              Request Sample:
+                value:
+                  data:
+                    externalProductId: 'PPYM1U'
+                    dealName: 'Last minute deal'
+                    dateRange:
+                      start: '2023-08-21'
+                      end: '2023-08-31'
+                    dealType: last_minute
+                    maxVacancies: 10
+                    discountPercentage: 10.5
+                    noticePeriodDays: 3
+      description: 'The create deals endpoint allows you to send us a new deal for a particular product in your system.'
+  /1/deals/{dealId}:
+    delete:
+      summary: Delete a deal
+      operationId: delete-deal
+      tags:
+        - Deals
+      parameters:
+        - name: "dealId"
+          in: "path"
+          required: true
+          description: The deal identifier in GetYourGuide's system
+          example: 1
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '204':
+          description: NO CONTENT
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/400-BadRequest'
+              examples:
+                Invalid Product:
+                  value:
+                    errorCode: VALIDATION_FAILURE
+                    errorMessage: 'Please check the request and the deal ID provided'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/401-Unauthorized'
+              examples:
+                Authorization Failure:
+                  value:
+                    errorCode: AUTHORIZATION_FAILURE
+                    errorMessage: 'DealsOverApi feature is not enabled, This feature can be enabled after passing the Deals Over Api self-testing in Integrator Portal'
+        '404':
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/404-NotFound'
+              examples:
+                Invalid Deal:
+                  value:
+                    errorCode: RESOURCE_NOT_FOUND
+                    errorMessage: 'Invalid deal ID 36457'
+        '500':
+          description: Internal System Failure
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/500-internal-server-error'
+              examples:
+                Internal System Failure:
+                  value:
+                    errorCode: INTERNAL_SYSTEM_FAILURE
+                    errorMessage: 'An unexpected error occurred. Please check your request data for correctness and accordance with our API.'
+      description: 'The delete deals endpoint allows you to delete deals that were created using the create deals endpoint.'
+  /1/suppliers:
+    post:
+      operationId: post-suppliers
+      summary: Register a new supplier
+      description:
+        $ref: 'description-post-suppliers.md'
+      tags: [ Suppliers ]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateSupplierRequest'
+      responses:
+        '202':
+          description: ACCEPTED
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateSupplierResponse'
+              examples:
+                Response Sample:
+                  value:
+                    data:
+                      message: Supplier registration accepted. Please wait for the confirmation email about the result.
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/400-BadRequest'
+              examples:
+                Invalid Product:
+                  value:
+                    errorCode: VALIDATION_FAILURE
+                    errorMessage: 'Invalid currency code XXX, please provide a valid currency in ISO 4217 format.'
+        '409':
+          description: Conflict
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/409-Confilct'
+              examples:
+                Supplier Already Exists:
+                  value:
+                    errorCode: RESOURCE_ALREADY_EXISTS
+                    errorMessage: 'Duplicated and open supplier registration request for the same external supplier id SUPP123'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/401-Unauthorized'
+              examples:
+                Authorization Failure:
+                  value:
+                    errorCode: AUTHORIZATION_FAILURE
+                    errorMessage: 'SUPPLIER_REGISTRATION_OVER_API feature is not enabled, This feature can be enabled after passing the Supplier Registration self-testing in Integrator Portal.'
+        '500':
+          description: Internal System Failure
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/500-internal-server-error'
+              examples:
+                Internal System Failure:
+                  value:
+                    errorCode: INTERNAL_SYSTEM_FAILURE
+                    errorMessage:
+                      'An unexpected internal system failure occurred. Please try again later or contact support for assistance.'
+components:
+  examples:
+    Success:
+      value:
+        success: true
+  schemas:
+    400-BadRequest:
+      type: object
+      properties:
+        errorCode:
+          type: string
+          enum:
+            - VALIDATION_FAILURE
+        errorMessage:
+          type: string
+    401-Unauthorized:
+      type: object
+      properties:
+        errorCode:
+          type: string
+          enum:
+            - AUTHORIZATION_FAILURE
+        errorMessage:
+          type: string
+    404-NotFound:
+      type: object
+      properties:
+        errorCode:
+          type: string
+          enum:
+            - INVALID_PRODUCT
+            - RESOURCE_NOT_FOUND
+        errorMessage:
+          type: string
+    409-Confilct:
+      type: object
+      properties:
+        errorCode:
+          type: string
+          enum:
+            - RESOURCE_ALREADY_EXISTS
+        errorMessage:
+          type: string
+    500-internal-server-error:
+      type: object
+      properties:
+        errorCode:
+          type: string
+          enum:
+            - INTERNAL_SYSTEM_FAILURE
+        errorMessage:
+          type: string
+    Availability:
+      type: object
+      properties:
+        dateTime:
+          type: string
+          format: date-time
+          description: The date/time of the activity (ISO 8601). Content of the time part depends on the type (see time point vs time period).
+        vacancies:
+          type: integer
+          description: |
+            The total number of vacancies across all categories for the requested product at the time slot specified in the dateTime field. If the product has “unlimited” availability please use a large value here. E.g. 5000.
+
+            **Note** - The "vacancies" field has an internal GetYourGuide cap of "5000". If received vacancies exceed 5000 for any DateTimeslot, GetYourGuide will still cap the value to 5000
+          minimum: 0
+        vacanciesByCategory:
+          type: array
+          description: |
+            For Individual ticket categories, this is the number of vacancies available for each ticket category for the requested product at the time slot specified in the dateTime field. For GROUP products, this isn't supported.
+          items:
+            $ref: '#/components/schemas/VacanciesByCategory'
+        openingTimes:
+          type: array
+          description: A list of opening times (from/to pairs) for time period product only.
+          items:
+            type: object
+            properties:
+              fromTime:
+                type: string
+                description: 'Example: "09:00"'
+              toTime:
+                type: string
+                description: 'Example: "12:00"'
+        currency:
+          type: string
+          description: 'Code of the currency (ISO 4217), using alphabetic code and three characters in length. Must be a supported currency. Example: "EUR"'
+        pricesByCategory:
+          type: object
+          description: 'Object representing the prices of the product'
+          properties:
+            retailPrices:
+              type: array
+              description: 'List of retail prices per categories'
+              items:
+                type: object
+                properties:
+                  category:
+                    enum:
+                      - ADULT
+                      - CHILD
+                      - YOUTH
+                      - INFANT
+                      - SENIOR
+                      - STUDENT
+                      - EU_CITIZEN
+                      - MILITARY
+                      - EU_CITIZEN_STUDENT
+                      - GROUP
+                    description: The category for which the retail price is being provided.
+                    type: string
+                  price:
+                    type: integer
+                    description: 'Integer representation of the smallest unit of the currency. Example: 10.00 Euro should be 1000. Following currencies are exception - JPY, CLP, KRW, VND. For these currencies we expect the exact retail price. Example: 5000 JPY should be price 5000'
+        tieredPricesByCategory:
+          type: object
+          description: 'Object representing the tiered prices of the product'
+          properties:
+            retailPrices:
+              type: array
+              description: 'List of tiered prices per categories'
+              items:
+                type: object
+                properties:
+                  category:
+                    enum:
+                      - ADULT
+                      - CHILD
+                      - YOUTH
+                      - INFANT
+                      - SENIOR
+                      - STUDENT
+                      - EU_CITIZEN
+                      - MILITARY
+                      - EU_CITIZEN_STUDENT
+                      - GROUP
+                    description: The category for which the retail price is being provided.
+                    type: string
+                    nullable: false
+                  tiers:
+                    type: array
+                    description: 'List of prices with tiers'
+                    nullable: false
+                    items:
+                      type: object
+                      properties:
+                        lowerBound:
+                          type: integer
+                          description: 'The minimum number of participants for this price tier. Inclusive.'
+                          nullable: false
+                        upperBound:
+                          type: integer
+                          description: 'The maximum number of participants for this price tier. Inclusive.'
+                          nullable: true
+                        price:
+                          type: integer
+                          description: 'Integer representation of the smallest unit of the currency. Example: 10.00 Euro should be 1000. Following currencies are exception - JPY, CLP, KRW, VND. For these currencies we expect the exact retail price. Example: 5000 JPY should be price 5000'
+                          nullable: false
+      required:
+        - dateTime
+      oneOf:
+        - required:
+            - vacancies
+        - required:
+            - vacanciesByCategory
+    VacanciesByCategory:
+      type: object
+      required:
+        - category
+        - vacancies
+      properties:
+        category:
+          enum:
+            - ADULT
+            - CHILD
+            - YOUTH
+            - INFANT
+            - SENIOR
+            - STUDENT
+            - EU_CITIZEN
+            - MILITARY
+            - EU_CITIZEN_STUDENT
+          description: 'The ticket categories for which the availabilities is being provided.'
+          type: string
+        vacancies:
+          type: integer
+          minimum: 0
+          description: |
+            The number of vacancies available for the ticket Category.
+    CreateDealRequest:
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            externalProductId:
+              type: string
+              description: The ID of the product in the partner's system
+              example: 'PPYM1U'
+            dealName:
+              type: string
+              description: The title of the deal
+              example: 'Last minute deal'
+            dateRange:
+              type: object
+              description: The date range over which the Deal will be applied
+              properties:
+                start:
+                  type: string
+                  format: date
+                  description: The start date of the deal
+                  example: '2023-08-21'
+                end:
+                  type: string
+                  format: date
+                  description: The end date of the deal
+                  example: '2023-08-31'
+            dealType:
+              type: string
+              description: 'The type of the deal to be applied. Choose one of the following types: <br><ul><li><b>standard</b> - Normal standard deal</li><li><b>early_bird</b> - Deal type to offer a discounted rate to those who purchase their tickets early</li><li><b>last_minute</b> - Deal type to offer discounted prices for last-minute bookings</li></ul>'
+              enum:
+                - standard
+                - early_bird
+                - last_minute
+              example: 'early_bird'
+            maxVacancies:
+              type: integer
+              description: The number of spots/vacancies the deal will be applied to (on a First come, First receive a deal)<br>If the parameter is empty, the deal is applied to all the spots in the applicable time range.
+              example: 10
+            discountPercentage:
+              type: number
+              description: The % of discount that will be applied to the retail price to get the Discounted (Red) price
+              example: 10.5
+            noticePeriodDays:
+              type: number
+              description: Defines how the Early_bird and Last_Minute Deals are applied<br><br> If Notice period - X days<br>Early_Bird - All bookings made at least X days in advance will be eligible for this offer<br>Last_Minute - For any unsold spots up to X days before the activity
+              example: 3
+          required:
+            - dealName
+            - dateRange
+            - dealType
+            - discountPercentage
+            - externalProductId
+      required:
+        - data
+    CreateDealSuccessResponse:
+      type: object
+      properties:
+        deals:
+          type: array
+          description: A list of the created deals
+          items:
+            $ref: '#/components/schemas/DealIdAndTourOptionId'
+    Deal:
+      type: object
+      properties:
+        dealId:
+          type: integer
+          format: int64
+          description: The deal identifier in GetYourGuide's system
+          example: 1
+        dealName:
+          type: string
+          description: The title of the deal
+          example: 'Last minute deal'
+        dateRange:
+          type: object
+          description: The date range over which the Deal will be applied
+          properties:
+            start:
+              type: string
+              format: date
+              description: The start date of the deal
+              example: '2023-08-21'
+            end:
+              type: string
+              format: date
+              description: The end date of the deal
+              example: '2023-08-31'
+        dealType:
+          type: string
+          description: 'The type of the deal to be applied. Can be one of the following types: <br><ul><li>standard - Normal standard deal</li><li>early_bird- Deal type to offer a discounted rate to those who purchase their tickets early</li><li>last_minute - Deal type to offer discounted prices for last-minute bookings</li></ul>'
+          enum:
+            - standard
+            - early_bird
+            - last_minute
+          example: 'early_bird'
+        maxVacancies:
+          type: integer
+          description: The number of spots/vacancies the deal has been applied to (on a First come, First receive a deal)
+          example: 10
+        discountPercentage:
+          type: number
+          description: The percentage of discount given
+          example: 10.5
+        gygTourOptionId:
+          type: integer
+          description: The product identifier in GetYourGuide's system
+          format: int64
+          example: 242907
+    DealIdAndTourOptionId:
+      type: object
+      properties:
+        dealId:
+          type: integer
+          format: int64
+          description: The deal identifier in GetYourGuide's system
+          example: 1
+        gygTourOptionId:
+          type: integer
+          description: The product identifier in GetYourGuide's system
+          format: int64
+          example: 242907
+    GetDealsSuccessResponse:
+      type: object
+      properties:
+        deals:
+          type: array
+          description: List of deals
+          items:
+            $ref: '#/components/schemas/Deal'
+    CreateSupplierRequest:
+      type: object
+      properties:
+        data:
+          description: Contains supplier details for registration.
+          required:
+            - externalSupplierId
+            - firstName
+            - lastName
+            - legalCompanyName
+            - websiteUrl
+            - country
+            - currency
+            - email
+            - legalStatus
+          properties:
+            externalSupplierId:
+              type: string
+              maxLength: 255
+              description: The unique ID of the supplier in your system.
+              example: '12345XYZ'
+            firstName:
+              type: string
+              maxLength: 45
+              description: Supplier contact's first name.
+              example: 'John'
+            lastName:
+              type: string
+              maxLength: 45
+              description: Supplier contact's last name.
+              example: 'Doe'
+            legalCompanyName:
+              type: string
+              maxLength: 90
+              description: Supplier's registered company name.
+              example: 'Example LLC'
+            websiteUrl:
+              type: string
+              description: |
+                Supplier's website address.
+
+                Note: link of the supplier’s Website, TripAdvisor, Instagram or Facebook page
+
+                Example: http:​//example.com
+              example: 'http:​//example.com'
+            country:
+              type: string
+              pattern: '^[A-Z]{3}$' # ISO 3166-1 alpha-3 pattern
+              description: |
+                ISO 3166-1 alpha-3 code representing the Supplier's country.
+
+                Example: USA
+              example: 'USA'
+            currency:
+              type: string
+              pattern: '^[A-Z]{3}$' # ISO 4217 currency codes pattern
+              description: |
+                ISO 4217 code for Supplier's business currency.
+
+                Example: USD
+              example: 'USD'
+            email:
+              type: string
+              maxLength: 255
+              description: Supplier's contact email.
+              example: 'contact@example.com'
+            legalStatus:
+              type: string
+              enum:
+                - individual
+                - company
+              description: |
+                Supplier's legal classification.
+
+                Note: If you are not sure of the legal status of your supplier, please default this to “company”. Suppliers can edit this field later if required.
+              example: 'company'
+            mobileNumber:
+              type: string
+              maxLength: 20
+              description: |
+                Supplier's mobile number.
+
+                Example: +11234567890
+              example: '+11234567890'
+            city:
+              type: string
+              pattern: '^[A-Z]{2} [A-Z2-9]{3}$' # UN/LOCODE pattern
+              description: |
+                Supplier's <a href="https://unece.org/trade/cefact/unlocode-code-list-country-and-territory" target="_blank">UN/LOCODE</a> city code.
+
+                Example: US BOY
+              example: 'US BOY'
+            postalCode:
+              type: string
+              maxLength: 10
+              description: |
+                Supplier's postal code.
+
+                Example: 10001
+              example: '10001'
+            stateOrRegion:
+              type: string
+              maxLength: 45
+              description: |
+                Supplier's state or region.
+
+                Example: New York
+              example: 'New York'
+    NotifyAvailabilityUpdateResponse:
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            message:
+              type: string
+          required:
+            - message
+      required:
+        - data
+    NotifyAvailabilityUpdateRequest:
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            productId:
+              type: string
+              description: The ID of the affected product in the supplier’s system.
+            availabilities:
+              type: array
+              items:
+                $ref: '#/components/schemas/Availability'
+          required:
+            - productId
+            - availabilities
+      required:
+        - data
+    CreateSupplierResponse:
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            message:
+              type: string
+          required:
+            - message
+      required:
+        - data
+    ReactivateProductRequest:
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            externalProductId:
+              type: string
+              description: The unique ID of the affected product in your system.
+      required:
+        - data
+    ReactivateProductResponse:
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            message:
+              type: string
+          required:
+            - message
+      required:
+        - data
+    RedemptionBookingReferenceRequest:
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            gygBookingReference:
+              type: string
+              description: The GYG Booking Reference
+          required:
+            - gygBookingReference
+      required:
+        - data
+    RedemptionTicketCodeRequest:
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            ticketCode:
+              type: string
+              description: The Ticket Code
+            gygBookingReference:
+              type: string
+              description: The GYG Booking Reference
+          required:
+            - ticketCode
+            - gygBookingReference
+      required:
+        - data
+    RedemptionSuccessResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+      required:
+        - success
+  securitySchemes:
+    BasicAuth:
+      type: http
+      scheme: basic
+      description: '[Authentication](/documentation/overview#section/Authentication) is carried out via standard HTTP Basic Auth with username and password <span style="font-weight:600">provided by GetYourGuide</span> at the beginning of the integration process.'
+tags:
+  - name: Notify Availability
+    description:
+      $ref: 'description-notify-availability.md'
+  - name: Deals
+    description:
+      $ref: 'description-deals.md'
+  - name: Products
+  - name: Suppliers
+  - name: Redemption
+    description:
+      $ref: 'description-redemption.md'
+

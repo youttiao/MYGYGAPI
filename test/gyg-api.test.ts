@@ -30,6 +30,7 @@ describe('GYG OPS minimal system', () => {
         description: 'Test product description',
         timezone: 'Europe/Berlin',
         currency: 'EUR',
+        pricingMode: 'MANUAL_IN_GYG',
         status: 'active',
         destinationCity: 'Berlin',
         destinationCountry: 'DEU'
@@ -67,10 +68,30 @@ describe('GYG OPS minimal system', () => {
     expect(body.data.availabilities.length).toBe(1);
     expect(body.data.availabilities[0]).toHaveProperty('productId', 'prod123');
     expect(body.data.availabilities[0]).toHaveProperty('dateTime');
+    expect(body.data.availabilities[0]).not.toHaveProperty('currency');
+    expect(body.data.availabilities[0]).not.toHaveProperty('pricesByCategory');
+  });
+
+  it('1.1) PRICE_OVER_API 产品会返回价格字段', async () => {
+    await prisma.product.update({
+      where: { id: productInternalId },
+      data: { pricingMode: 'PRICE_OVER_API' }
+    });
+
+    const res = await app.inject({
+      method: 'GET',
+      url: '/1/get-availabilities/?productId=prod123&fromDateTime=2029-12-31T00:00:00%2B01:00&toDateTime=2030-01-02T00:00:00%2B01:00',
+      headers: { authorization: basic('gyg_user', 'gyg_pass') }
+    });
+
+    expect(res.statusCode).toBe(200);
+    const body = res.json();
+    expect(body.data.availabilities[0]).toHaveProperty('currency', 'EUR');
+    expect(body.data.availabilities[0]).toHaveProperty('pricesByCategory');
   });
 
   it('2) booking 创建成功并入库', async () => {
-    await app.inject({
+    const reserveRes = await app.inject({
       method: 'POST',
       url: '/1/reserve/',
       headers: {
@@ -86,6 +107,8 @@ describe('GYG OPS minimal system', () => {
         }
       }
     });
+    expect(reserveRes.statusCode).toBe(200);
+    const reservationReference = reserveRes.json().data.reservationReference;
 
     const bookRes = await app.inject({
       method: 'POST',
@@ -97,7 +120,7 @@ describe('GYG OPS minimal system', () => {
       payload: {
         data: {
           productId: 'prod123',
-          reservationReference: 'res_GYG-BOOK-001',
+          reservationReference,
           gygBookingReference: 'GYG-BOOK-001',
           currency: 'EUR',
           dateTime: '2030-01-01T10:00:00+01:00',
@@ -116,7 +139,7 @@ describe('GYG OPS minimal system', () => {
     });
 
     expect(bookRes.statusCode).toBe(200);
-    expect(bookRes.json().data.bookingReference).toBe('bk_GYG-BOOK-001');
+    expect(bookRes.json().data.bookingReference).toBe('bkGYGBOOK001');
 
     const booking = await prisma.booking.findUnique({
       where: { gygBookingReference: 'GYG-BOOK-001' }
@@ -126,7 +149,7 @@ describe('GYG OPS minimal system', () => {
   });
 
   it('3) booking 幂等：重复请求不会重复创建', async () => {
-    await app.inject({
+    const reserveRes = await app.inject({
       method: 'POST',
       url: '/1/reserve/',
       headers: {
@@ -142,11 +165,13 @@ describe('GYG OPS minimal system', () => {
         }
       }
     });
+    expect(reserveRes.statusCode).toBe(200);
+    const reservationReference = reserveRes.json().data.reservationReference;
 
     const payload = {
       data: {
         productId: 'prod123',
-        reservationReference: 'res_GYG-IDEMP-001',
+        reservationReference,
         gygBookingReference: 'GYG-IDEMP-001',
         currency: 'EUR',
         dateTime: '2030-01-01T10:00:00+01:00',

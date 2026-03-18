@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>GYG Admin Console</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/static/admin.css" />
+</head>
+<body>
+  <div class="bg-glow bg-glow-one"></div>
+  <div class="bg-glow bg-glow-two"></div>
+
+  <main class="shell-layout">
+    <aside class="sidebar card" id="sidebar">
+      <div class="brand">
+        <p class="eyebrow">Inventory Bridge</p>
+        <h1>GYG 后台</h1>
+      </div>
+      <nav class="side-nav" id="sideNav">
+        <button class="nav-item active" data-nav="inventory">库存管理</button>
+        <button class="nav-item" data-nav="orders">订单记录</button>
+        <button class="nav-item" data-nav="users">用户管理</button>
+        <button class="nav-item" data-nav="settings">系统设置</button>
+      </nav>
+      <p class="side-hint">后续新功能只需增加一个导航项和对应模块面板。</p>
+    </aside>
+
+    <section class="content-area">
+      <header class="mobile-topbar">
+        <button class="hamburger" id="navMoreBtn" type="button" aria-label="Open menu">
+          <span></span>
+          <span></span>
+          <span></span>
+        </button>
+        <div class="mobile-title">
+          <p class="eyebrow">Inventory Bridge</p>
+          <strong>GYG 后台</strong>
+        </div>
+      </header>
+
+      <section class="module-view active" data-module="inventory">
+        <header class="hero card">
+          <h2>库存管理台</h2>
+          <p class="hero-sub">维护商品时段库存，并实时查看接口已同步的数据。桌面与手机都可直接使用。</p>
+          <div class="hero-stats">
+            <div class="stat">
+              <span>当前时段数</span>
+              <strong id="slotCount">0</strong>
+            </div>
+            <div class="stat">
+              <span>最后刷新</span>
+              <strong id="refreshAt">-</strong>
+            </div>
+          </div>
+        </header>
+
+        <section class="card panel">
+          <div class="panel-title">
+            <h3>库存时段编辑</h3>
+            <p>填写 `productId + dateTime + vacancies`，保存后立即生效。</p>
+          </div>
+          <form id="slotForm" class="form-grid">
+            <label>
+              <span>Product ID</span>
+              <input id="productId" name="productId" placeholder="例如：prod123" required />
+            </label>
+            <label>
+              <span>Date Time (ISO8601)</span>
+              <input id="dateTime" name="dateTime" placeholder="2026-02-15T10:00:00+00:00" required />
+            </label>
+            <label>
+              <span>Vacancies</span>
+              <input id="vacancies" name="vacancies" type="number" min="0" value="10" required />
+            </label>
+            <div class="actions">
+              <button type="submit" class="btn btn-primary">保存时段</button>
+              <button type="button" id="refreshBtn" class="btn btn-secondary">刷新列表</button>
+            </div>
+          </form>
+        </section>
+
+        <section class="card panel">
+          <div class="panel-title">
+            <h3>库存列表</h3>
+          </div>
+
+          <div class="desktop-table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Product</th>
+                  <th>DateTime</th>
+                  <th>Vacancies</th>
+                  <th>Updated</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody id="tableRows"></tbody>
+            </table>
+          </div>
+
+          <div id="mobileCards" class="mobile-list"></div>
+        </section>
+      </section>
+
+      <section class="module-view" data-module="orders">
+        <div class="card placeholder-card">
+          <h2>订单记录</h2>
+          <p>后续可接入 `/orders` 与筛选、导出、状态追踪功能。</p>
+        </div>
+      </section>
+
+      <section class="module-view" data-module="users">
+        <div class="card placeholder-card">
+          <h2>用户管理</h2>
+          <p>后续可扩展管理员账号、角色权限、审计日志功能。</p>
+        </div>
+      </section>
+
+      <section class="module-view" data-module="settings">
+        <div class="card placeholder-card">
+          <h2>系统设置</h2>
+          <p>后续可放 GYG 鉴权配置、回调策略、运维开关等配置项。</p>
+        </div>
+      </section>
+    </section>
+  </main>
+
+  <div class="drawer-backdrop" id="drawerBackdrop" hidden></div>
+  <aside class="drawer" id="navDrawer" aria-hidden="true">
+    <div class="drawer-head">
+      <div>
+        <p class="eyebrow">Navigation</p>
+        <h2>功能菜单</h2>
+      </div>
+      <button class="drawer-close" id="drawerCloseBtn" type="button" aria-label="Close menu">关闭</button>
+    </div>
+    <div class="drawer-body" id="drawerBody"></div>
+  </aside>
+
+  <div id="toast" class="toast" aria-live="polite"></div>
+
+  <script src="/static/admin.js"></script>
+</body>
+</html>

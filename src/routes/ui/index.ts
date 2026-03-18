@@ -50,7 +50,7 @@ function renderDocument(title: string, body: string, script: string): string {
     }
 
     .app-sidebar .container-fluid {
-      padding: 1rem 1rem 1.25rem;
+      padding: 0.9rem 0.95rem 1.2rem;
     }
 
     .app-sidebar .navbar-collapse {
@@ -59,17 +59,65 @@ function renderDocument(title: string, body: string, script: string): string {
 
     .navbar-brand-title {
       color: #fff;
-      font-size: 0.95rem;
+      font-size: 0.9rem;
       font-weight: 700;
       letter-spacing: 0.01em;
-      line-height: 1.2;
+      line-height: 1.15;
     }
 
     .navbar-brand-subtitle {
       color: var(--gyg-sidebar-muted);
-      font-size: 0.6875rem;
+      font-size: 0.625rem;
       text-transform: uppercase;
-      letter-spacing: 0.14em;
+      letter-spacing: 0.18em;
+    }
+
+    .sidebar-brand {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      width: 100%;
+      padding: 0.4rem 0 1rem;
+      margin-bottom: 0.35rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    .sidebar-brand-mark {
+      width: 2.4rem;
+      height: 2.4rem;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 0.85rem;
+      background: linear-gradient(135deg, rgba(32, 107, 196, 0.35), rgba(32, 107, 196, 0.08));
+      color: #dbeafe;
+      flex: 0 0 auto;
+    }
+
+    .sidebar-brand-mark .nav-link-icon {
+      width: 1.2rem;
+      height: 1.2rem;
+      margin-right: 0;
+    }
+
+    .sidebar-brand-copy {
+      min-width: 0;
+    }
+
+    .sidebar-brand-main {
+      color: #fff;
+      font-size: 1.05rem;
+      font-weight: 700;
+      line-height: 1.15;
+      margin: 0;
+      letter-spacing: 0;
+    }
+
+    .sidebar-brand-sub {
+      color: rgba(255, 255, 255, 0.6);
+      font-size: 0.75rem;
+      margin-top: 0.15rem;
+      line-height: 1.2;
     }
 
     .app-nav {
@@ -125,6 +173,27 @@ function renderDocument(title: string, body: string, script: string): string {
       letter-spacing: 0;
     }
 
+    .nav-link-copy {
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+    }
+
+    .nav-link-title {
+      display: block;
+      font-size: 1rem;
+      line-height: 1.2;
+    }
+
+    .nav-link-subtitle {
+      display: block;
+      font-size: 0.72rem;
+      line-height: 1.15;
+      color: rgba(255, 255, 255, 0.52);
+      margin-top: 0.15rem;
+      letter-spacing: 0.02em;
+    }
+
     .btn .nav-link-icon {
       width: 1rem;
       height: 1rem;
@@ -159,16 +228,32 @@ function renderDocument(title: string, body: string, script: string): string {
 
     .theme-switcher {
       margin-top: 0.75rem;
-      display: grid;
-      gap: 0.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
     }
 
-    .theme-switcher .btn-group {
-      width: 100%;
+    .theme-switcher-icons {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
     }
 
-    .theme-switcher .btn {
+    .theme-icon-btn {
+      width: 2rem;
+      height: 2rem;
+      padding: 0;
+      border-radius: 999px;
+      display: inline-flex;
+      align-items: center;
       justify-content: center;
+    }
+
+    .theme-icon-btn .nav-link-icon {
+      width: 1rem;
+      height: 1rem;
+      margin-right: 0;
     }
 
     .login-shell {
@@ -232,6 +317,9 @@ function renderDocument(title: string, body: string, script: string): string {
       bottom: 1.25rem;
       z-index: 1050;
       box-shadow: 0 16px 36px rgba(32, 107, 196, 0.28);
+      width: 3rem;
+      height: 3rem;
+      padding: 0;
     }
 
     .console-output {
@@ -337,6 +425,7 @@ function renderIcon(
     | 'chevronRight'
     | 'search'
     | 'list'
+    | 'sparkles'
 ): string {
   const icons = {
     package:
@@ -370,7 +459,9 @@ function renderIcon(
     search:
       '<svg xmlns="http://www.w3.org/2000/svg" class="nav-link-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M10 10m-7 0a7 7 0 1 0 14 0a7 7 0 1 0 -14 0"/><path d="M21 21l-6 -6"/></svg>',
     list:
-      '<svg xmlns="http://www.w3.org/2000/svg" class="nav-link-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l11 0"/><path d="M9 12l11 0"/><path d="M9 18l11 0"/><path d="M5 6l0 .01"/><path d="M5 12l0 .01"/><path d="M5 18l0 .01"/></svg>'
+      '<svg xmlns="http://www.w3.org/2000/svg" class="nav-link-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l11 0"/><path d="M9 12l11 0"/><path d="M9 18l11 0"/><path d="M5 6l0 .01"/><path d="M5 12l0 .01"/><path d="M5 18l0 .01"/></svg>',
+    sparkles:
+      '<svg xmlns="http://www.w3.org/2000/svg" class="nav-link-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.9 4.1L18 9l-4.1 1.9L12 15l-1.9-4.1L6 9l4.1-1.9z"/><path d="M5 18l.5 1.5L7 20l-1.5 .5L5 22l-.5-1.5L3 20l1.5-.5z"/><path d="M19 16l.7 1.3L21 18l-1.3 .7L19 20l-.7-1.3L17 18l1.3-.7z"/></svg>'
   } as const;
 
   return icons[name];
@@ -385,9 +476,9 @@ function renderAppShell(options: {
   content: string;
 }): string {
   const navItems = [
-    { key: 'products', href: '/', label: '商品列表', icon: renderIcon('package') },
-    { key: 'bookings', href: '/gyg-bookings', label: 'GYG Booking 管理', icon: renderIcon('calendar') },
-    { key: 'logs', href: '/integration-logs', label: 'GYG 访问日志', icon: renderIcon('activity') }
+    { key: 'products', href: '/', label: '商品列表', subtitle: 'Products', icon: renderIcon('package') },
+    { key: 'bookings', href: '/gyg-bookings', label: '预订管理', subtitle: 'GYG Bookings', icon: renderIcon('calendar') },
+    { key: 'logs', href: '/integration-logs', label: '访问日志', subtitle: 'Access Logs', icon: renderIcon('activity') }
   ];
 
   const navHtml = navItems
@@ -395,7 +486,10 @@ function renderAppShell(options: {
       (item) => `<li class="nav-item">
         <a class="nav-link${item.key === options.activeNav ? ' active' : ''}" href="${item.href}">
           ${item.icon}
-          <span class="nav-link-label">${item.label}</span>
+          <span class="nav-link-copy">
+            <span class="nav-link-title">${item.label}</span>
+            <span class="nav-link-subtitle">${item.subtitle}</span>
+          </span>
         </a>
       </li>`
     )
@@ -425,9 +519,13 @@ function renderAppShell(options: {
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#sidebar-menu" aria-controls="sidebar-menu" aria-expanded="false" aria-label="Toggle navigation">
           <span class="navbar-toggler-icon"></span>
         </button>
-        <div class="navbar-brand navbar-brand-autodark d-flex flex-column align-items-start py-3">
-          <span class="navbar-brand-subtitle">Tabler Based</span>
-          <span class="navbar-brand-title">GYG Admin Console</span>
+        <div class="sidebar-brand">
+          <span class="sidebar-brand-mark">${renderIcon('sparkles')}</span>
+          <div class="sidebar-brand-copy">
+            <div class="navbar-brand-subtitle">Tabler Based</div>
+            <div class="sidebar-brand-main">GYG Admin Console</div>
+            <div class="sidebar-brand-sub">运营后台 · Ops Console</div>
+          </div>
         </div>
         <div class="collapse navbar-collapse" id="sidebar-menu">
           <ul class="navbar-nav app-nav pt-lg-2">
@@ -444,11 +542,11 @@ function renderAppShell(options: {
                 <button id="logout-btn" class="btn btn-sm btn-outline-light" type="button">退出</button>
               </div>
               <div class="theme-switcher">
-                <div class="text-secondary small">主题</div>
-                <div class="btn-group" role="group" aria-label="Theme switcher">
-                  <button type="button" class="btn btn-sm btn-outline-light" data-theme-value="auto">${renderIcon('device')}<span>跟随系统</span></button>
-                  <button type="button" class="btn btn-sm btn-outline-light" data-theme-value="light">${renderIcon('sun')}<span>浅色</span></button>
-                  <button type="button" class="btn btn-sm btn-outline-light" data-theme-value="dark">${renderIcon('moon')}<span>深色</span></button>
+                <div class="text-secondary small">Theme</div>
+                <div class="theme-switcher-icons" role="group" aria-label="Theme switcher">
+                  <button type="button" class="btn btn-sm btn-outline-light theme-icon-btn" data-theme-value="auto" aria-label="Follow system">${renderIcon('device')}</button>
+                  <button type="button" class="btn btn-sm btn-outline-light theme-icon-btn" data-theme-value="light" aria-label="Light mode">${renderIcon('sun')}</button>
+                  <button type="button" class="btn btn-sm btn-outline-light theme-icon-btn" data-theme-value="dark" aria-label="Dark mode">${renderIcon('moon')}</button>
                 </div>
               </div>
             </div>
@@ -711,13 +809,13 @@ function productsPage(): string {
           <div class="card-header">
             <div>
               <h3 class="card-title">商品目录</h3>
-              <div class="text-secondary small mt-1">先从已有商品中提取 Supplier ID，下拉切换后自动加载。</div>
+              <div class="text-secondary small mt-1">Products Directory · 先从已有商品中提取 Supplier ID，下拉切换后自动加载。</div>
             </div>
           </div>
           <div class="card-body border-bottom py-3">
             <div class="supplier-toolbar">
               <div class="text-secondary">
-                Supplier
+                Supplier ID
                 <div class="ms-2 d-inline-block">
                   <select id="supplierIdFilter" class="form-select form-select-sm" aria-label="Select supplier"></select>
                 </div>
@@ -743,7 +841,7 @@ function productsPage(): string {
                 <tr>
                   <th class="w-1"><input id="selectAllProducts" class="form-check-input m-0 align-middle" type="checkbox" aria-label="Select all products"></th>
                   <th class="w-1">No.</th>
-                  <th>商品</th>
+                  <th>商品 Product</th>
                   <th>Supplier</th>
                   <th>External ID</th>
                   <th>Status</th>
@@ -781,9 +879,9 @@ function productsPage(): string {
 
     <div class="modal modal-blur fade" id="create-product-modal" tabindex="-1" aria-hidden="true">
       <div class="modal-dialog modal-lg modal-dialog-centered">
-        <div class="modal-content">
+          <div class="modal-content">
           <div class="modal-header">
-            <h3 class="modal-title">创建商品</h3>
+            <h3 class="modal-title">创建商品 Create Product</h3>
             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
           </div>
           <form id="create-product-form">
@@ -798,33 +896,33 @@ function productsPage(): string {
                   <input id="productId" class="form-control" value="prod-web-001" required />
                 </div>
                 <div class="col-md-6">
-                  <label class="form-label">name</label>
+                  <label class="form-label">名称 Name</label>
                   <input id="name" class="form-control" value="Web Product" required />
                 </div>
                 <div class="col-md-6">
-                  <label class="form-label">timezone</label>
+                  <label class="form-label">时区 Timezone</label>
                   <input id="timezone" class="form-control" value="Asia/Shanghai" required />
                 </div>
                 <div class="col-md-4">
-                  <label class="form-label">currency</label>
+                  <label class="form-label">币种 Currency</label>
                   <input id="currency" class="form-control" value="CNY" required />
                 </div>
                 <div class="col-md-4">
-                  <label class="form-label">pricingMode</label>
+                  <label class="form-label">定价模式 Pricing</label>
                   <select id="pricingMode" class="form-select">
                     <option value="MANUAL_IN_GYG">MANUAL_IN_GYG</option>
                     <option value="PRICE_OVER_API">PRICE_OVER_API</option>
                   </select>
                 </div>
                 <div class="col-md-4">
-                  <label class="form-label">status</label>
+                  <label class="form-label">状态 Status</label>
                   <select id="status" class="form-select">
                     <option value="active">active</option>
                     <option value="inactive">inactive</option>
                   </select>
                 </div>
                 <div class="col-12">
-                  <label class="form-label">description</label>
+                  <label class="form-label">描述 Description</label>
                   <textarea id="description" class="form-control" rows="4">Created from Tabler UI</textarea>
                 </div>
               </div>
@@ -1043,11 +1141,11 @@ function bookingsPage(): string {
       <div class="col-12 col-xl-4">
         <div class="card">
           <div class="card-header">
-            <h3 class="card-title">筛选条件</h3>
+            <h3 class="card-title">筛选条件 Filters</h3>
           </div>
           <div class="card-body d-grid gap-3">
             <label class="form-label mb-0">
-              <span class="form-label-description">状态</span>
+              <span class="form-label-description">状态 Status</span>
               <select id="status" class="form-select">
                 <option value="">all status</option>
                 <option value="created">created</option>
@@ -1057,7 +1155,7 @@ function bookingsPage(): string {
               </select>
             </label>
             <label class="form-label mb-0">
-              <span class="form-label-description">GYG Booking Reference</span>
+              <span class="form-label-description">预订号 Booking Ref</span>
               <input id="gygRef" class="form-control" placeholder="gygBookingReference" />
             </label>
             <button id="load" class="btn btn-primary" type="button">查询 Bookings</button>
@@ -1114,7 +1212,7 @@ function logsPage(): string {
       <div class="col-12 col-xl-3">
         <div class="card">
           <div class="card-header">
-            <h3 class="card-title">筛选条件</h3>
+            <h3 class="card-title">筛选条件 Filters</h3>
           </div>
           <div class="card-body d-grid gap-3">
             <label class="form-label mb-0">
@@ -1126,15 +1224,15 @@ function logsPage(): string {
               </select>
             </label>
             <label class="form-label mb-0">
-              <span class="form-label-description">Path</span>
+              <span class="form-label-description">路径 Path</span>
               <input id="path" class="form-control" placeholder="/1/get-availabilities/" />
             </label>
             <label class="form-label mb-0">
-              <span class="form-label-description">Status Code</span>
+              <span class="form-label-description">状态码 Status</span>
               <input id="statusCode" class="form-control" placeholder="200" />
             </label>
             <label class="form-label mb-0">
-              <span class="form-label-description">Limit</span>
+              <span class="form-label-description">条数 Limit</span>
               <input id="limit" class="form-control" type="number" min="1" max="500" value="100" />
             </label>
             <button id="load" class="btn btn-primary" type="button">加载日志</button>

@@ -31,6 +31,10 @@ function renderDocument(title: string, body: string, script: string): string {
       --gyg-accent: #206bc4;
     }
 
+    html[data-bs-theme='dark'] body {
+      background: linear-gradient(180deg, #0b1220 0%, #0f172a 42%, #101826 100%);
+    }
+
     body {
       font-family: 'Inter', sans-serif;
       background: linear-gradient(180deg, #eef3fb 0%, #f7f9fd 40%, #f4f6fb 100%);
@@ -101,6 +105,14 @@ function renderDocument(title: string, body: string, script: string): string {
       box-shadow: 0 14px 50px rgba(15, 23, 42, 0.06);
     }
 
+    html[data-bs-theme='dark'] .page-header-card {
+      background:
+        radial-gradient(circle at top right, rgba(76, 147, 240, 0.16), transparent 34%),
+        linear-gradient(135deg, #111827 0%, #0f172a 100%);
+      border-color: rgba(148, 163, 184, 0.12);
+      box-shadow: 0 18px 52px rgba(2, 6, 23, 0.3);
+    }
+
     .nav-link-icon {
       width: 1.25rem;
       height: 1.25rem;
@@ -143,6 +155,20 @@ function renderDocument(title: string, body: string, script: string): string {
 
     .sidebar-auth-actions .btn {
       white-space: nowrap;
+    }
+
+    .theme-switcher {
+      margin-top: 0.75rem;
+      display: grid;
+      gap: 0.5rem;
+    }
+
+    .theme-switcher .btn-group {
+      width: 100%;
+    }
+
+    .theme-switcher .btn {
+      justify-content: center;
     }
 
     .login-shell {
@@ -200,6 +226,50 @@ function renderDocument(title: string, body: string, script: string): string {
       overflow-x: auto;
     }
 
+    .floating-console-btn {
+      position: fixed;
+      right: 1.25rem;
+      bottom: 1.25rem;
+      z-index: 1050;
+      box-shadow: 0 16px 36px rgba(32, 107, 196, 0.28);
+    }
+
+    .console-output {
+      background: #0f172a;
+      color: #dbeafe;
+      border-radius: 0.875rem;
+      padding: 1rem;
+      min-height: 240px;
+      max-height: 40vh;
+      overflow: auto;
+      font-size: 0.8125rem;
+      white-space: pre-wrap;
+    }
+
+    .console-output-entry + .console-output-entry {
+      margin-top: 0.875rem;
+      padding-top: 0.875rem;
+      border-top: 1px solid rgba(148, 163, 184, 0.18);
+    }
+
+    .console-output-meta {
+      color: #93c5fd;
+      font-size: 0.75rem;
+      margin-bottom: 0.375rem;
+    }
+
+    .supplier-toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      align-items: center;
+    }
+
+    .supplier-toolbar .form-select,
+    .supplier-toolbar .form-control {
+      min-width: 140px;
+    }
+
     .stat-soft {
       border-radius: 1rem;
       background: #f6f8fc;
@@ -214,6 +284,12 @@ function renderDocument(title: string, body: string, script: string): string {
       text-align: center;
       color: var(--tblr-secondary);
       background: rgba(255, 255, 255, 0.7);
+    }
+
+    html[data-bs-theme='dark'] .empty-state,
+    html[data-bs-theme='dark'] .stat-soft {
+      background: rgba(15, 23, 42, 0.66);
+      border-color: rgba(148, 163, 184, 0.12);
     }
 
     @media (min-width: 992px) {
@@ -243,7 +319,25 @@ ${script}
 </html>`;
 }
 
-function renderIcon(name: 'package' | 'calendar' | 'activity' | 'plus' | 'refresh' | 'shield'): string {
+function renderIcon(
+  name:
+    | 'package'
+    | 'calendar'
+    | 'activity'
+    | 'plus'
+    | 'refresh'
+    | 'shield'
+    | 'moon'
+    | 'sun'
+    | 'device'
+    | 'terminal'
+    | 'copy'
+    | 'trash'
+    | 'chevronLeft'
+    | 'chevronRight'
+    | 'search'
+    | 'list'
+): string {
   const icons = {
     package:
       '<svg xmlns="http://www.w3.org/2000/svg" class="nav-link-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 4v10l-7 4l-7-4V7z"/><path d="M12 12l7-4"/><path d="M12 12v9"/><path d="M12 12L5 8"/></svg>',
@@ -256,7 +350,27 @@ function renderIcon(name: 'package' | 'calendar' | 'activity' | 'plus' | 'refres
     refresh:
       '<svg xmlns="http://www.w3.org/2000/svg" class="nav-link-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11a8.1 8.1 0 0 0-15.5-2m-.5-4v4h4"/><path d="M4 13a8.1 8.1 0 0 0 15.5 2m.5 4v-4h-4"/></svg>',
     shield:
-      '<svg xmlns="http://www.w3.org/2000/svg" class="nav-link-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 4v5c0 5-3 8-7 9c-4-1-7-4-7-9V7z"/></svg>'
+      '<svg xmlns="http://www.w3.org/2000/svg" class="nav-link-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 4v5c0 5-3 8-7 9c-4-1-7-4-7-9V7z"/></svg>',
+    moon:
+      '<svg xmlns="http://www.w3.org/2000/svg" class="nav-link-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3c.132 0 .263 0 .393 .002a9 9 0 1 0 8.605 11.994a9 9 0 0 1 -8.998 -11.996z"/></svg>',
+    sun:
+      '<svg xmlns="http://www.w3.org/2000/svg" class="nav-link-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 12m-4 0a4 4 0 1 0 8 0a4 4 0 1 0 -8 0"/><path d="M3 12h1"/><path d="M12 3v1"/><path d="M5.6 5.6l.7 .7"/><path d="M20 12h1"/><path d="M12 20v1"/><path d="M18.4 18.4l.7 .7"/><path d="M18.4 5.6l.7 -.7"/><path d="M5.6 18.4l.7 -.7"/></svg>',
+    device:
+      '<svg xmlns="http://www.w3.org/2000/svg" class="nav-link-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5a2 2 0 0 1 2 -2h14a2 2 0 0 1 2 2v8a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2z"/><path d="M7 20h10"/><path d="M9 16v4"/><path d="M15 16v4"/></svg>',
+    terminal:
+      '<svg xmlns="http://www.w3.org/2000/svg" class="nav-link-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M5 7l5 5l-5 5"/><path d="M12 19l7 0"/></svg>',
+    copy:
+      '<svg xmlns="http://www.w3.org/2000/svg" class="nav-link-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M8 8m0 2a2 2 0 0 1 2 -2h8a2 2 0 0 1 2 2v8a2 2 0 0 1 -2 2h-8a2 2 0 0 1 -2 -2z"/><path d="M16 8v-2a2 2 0 0 0 -2 -2h-8a2 2 0 0 0 -2 2v8a2 2 0 0 0 2 2h2"/></svg>',
+    trash:
+      '<svg xmlns="http://www.w3.org/2000/svg" class="nav-link-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7l16 0"/><path d="M10 11l0 6"/><path d="M14 11l0 6"/><path d="M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2 -2l1 -12"/><path d="M9 7l1 -3h4l1 3"/></svg>',
+    chevronLeft:
+      '<svg xmlns="http://www.w3.org/2000/svg" class="nav-link-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6l6 6"/></svg>',
+    chevronRight:
+      '<svg xmlns="http://www.w3.org/2000/svg" class="nav-link-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6l-6 6"/></svg>',
+    search:
+      '<svg xmlns="http://www.w3.org/2000/svg" class="nav-link-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M10 10m-7 0a7 7 0 1 0 14 0a7 7 0 1 0 -14 0"/><path d="M21 21l-6 -6"/></svg>',
+    list:
+      '<svg xmlns="http://www.w3.org/2000/svg" class="nav-link-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l11 0"/><path d="M9 12l11 0"/><path d="M9 18l11 0"/><path d="M5 6l0 .01"/><path d="M5 12l0 .01"/><path d="M5 18l0 .01"/></svg>'
   } as const;
 
   return icons[name];
@@ -329,6 +443,14 @@ function renderAppShell(options: {
                 <span id="token-indicator" class="badge bg-azure-lt text-azure">未登录</span>
                 <button id="logout-btn" class="btn btn-sm btn-outline-light" type="button">退出</button>
               </div>
+              <div class="theme-switcher">
+                <div class="text-secondary small">主题</div>
+                <div class="btn-group" role="group" aria-label="Theme switcher">
+                  <button type="button" class="btn btn-sm btn-outline-light" data-theme-value="auto">${renderIcon('device')}<span>跟随系统</span></button>
+                  <button type="button" class="btn btn-sm btn-outline-light" data-theme-value="light">${renderIcon('sun')}<span>浅色</span></button>
+                  <button type="button" class="btn btn-sm btn-outline-light" data-theme-value="dark">${renderIcon('moon')}<span>深色</span></button>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -354,12 +476,35 @@ function renderAppShell(options: {
         </div>
       </div>
     </div>
+  </div>
+
+  <a href="#" class="btn btn-floating btn-icon btn-primary floating-console-btn" data-bs-toggle="offcanvas" data-bs-target="#console-offcanvas" aria-controls="console-offcanvas" aria-label="Open debug console">
+    ${renderIcon('terminal')}
+  </a>
+
+  <div class="offcanvas offcanvas-bottom h-auto" tabindex="-1" id="console-offcanvas" aria-labelledby="console-offcanvas-label">
+    <div class="offcanvas-header">
+      <div>
+        <div class="text-uppercase text-secondary fw-bold small">Runtime Console</div>
+        <h2 class="offcanvas-title" id="console-offcanvas-label">请求与调试输出</h2>
+      </div>
+      <div class="d-flex align-items-center gap-2">
+        <button id="copy-console" class="btn btn-outline-primary btn-sm" type="button">${renderIcon('copy')}<span>复制</span></button>
+        <button id="clear-console" class="btn btn-outline-secondary btn-sm" type="button">${renderIcon('trash')}<span>清空</span></button>
+        <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+      </div>
+    </div>
+    <div class="offcanvas-body pt-0">
+      <div id="console-output" class="console-output">Ready</div>
+    </div>
   </div>`;
 }
 
 function sharedScript(pageScript: string): string {
   return `
 const ADMIN_TOKEN_KEY = 'admin_token';
+const ADMIN_THEME_KEY = 'admin_theme_mode';
+const consoleEntries = [];
 
 function getToken() {
   return localStorage.getItem(ADMIN_TOKEN_KEY) || '';
@@ -371,6 +516,32 @@ function setToken(token) {
 
 function clearToken() {
   localStorage.removeItem(ADMIN_TOKEN_KEY);
+}
+
+function getThemeMode() {
+  return localStorage.getItem(ADMIN_THEME_KEY) || 'auto';
+}
+
+function resolveTheme(mode) {
+  if (mode === 'dark' || mode === 'light') {
+    return mode;
+  }
+  return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+}
+
+function applyTheme(mode) {
+  const resolved = resolveTheme(mode);
+  document.documentElement.setAttribute('data-bs-theme', resolved);
+  document.querySelectorAll('[data-theme-value]').forEach((button) => {
+    const active = button.getAttribute('data-theme-value') === mode;
+    button.classList.toggle('btn-primary', active);
+    button.classList.toggle('btn-outline-light', !active);
+  });
+}
+
+function setThemeMode(mode) {
+  localStorage.setItem(ADMIN_THEME_KEY, mode);
+  applyTheme(mode);
 }
 
 function renderShellVisibility() {
@@ -430,8 +601,42 @@ function formatOutput(value) {
   return typeof value === 'string' ? value : JSON.stringify(value, null, 2);
 }
 
+function renderConsole() {
+  const output = document.getElementById('console-output');
+  if (!output) {
+    return;
+  }
+  if (!consoleEntries.length) {
+    output.textContent = 'Ready';
+    return;
+  }
+  output.innerHTML = consoleEntries
+    .map((entry) => '<div class="console-output-entry"><div class="console-output-meta">' + entry.time + '</div><div>' + entry.text.replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;') + '</div></div>')
+    .join('');
+  output.scrollTop = output.scrollHeight;
+}
+
+function appendLog(value) {
+  consoleEntries.push({
+    time: new Date().toLocaleString('zh-CN'),
+    text: formatOutput(value)
+  });
+  renderConsole();
+}
+
 document.addEventListener('DOMContentLoaded', () => {
+  applyTheme(getThemeMode());
   renderShellVisibility();
+  renderConsole();
+
+  const media = window.matchMedia('(prefers-color-scheme: dark)');
+  if (media && media.addEventListener) {
+    media.addEventListener('change', () => {
+      if (getThemeMode() === 'auto') {
+        applyTheme('auto');
+      }
+    });
+  }
 
   const loginForm = document.getElementById('login-form');
   if (loginForm) {
@@ -462,6 +667,29 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  document.querySelectorAll('[data-theme-value]').forEach((button) => {
+    button.addEventListener('click', () => {
+      setThemeMode(button.getAttribute('data-theme-value'));
+    });
+  });
+
+  const clearConsoleBtn = document.getElementById('clear-console');
+  if (clearConsoleBtn) {
+    clearConsoleBtn.addEventListener('click', () => {
+      consoleEntries.length = 0;
+      renderConsole();
+    });
+  }
+
+  const copyConsoleBtn = document.getElementById('copy-console');
+  if (copyConsoleBtn) {
+    copyConsoleBtn.addEventListener('click', async () => {
+      const text = consoleEntries.map((entry) => '[' + entry.time + ']\\n' + entry.text).join('\\n\\n');
+      await navigator.clipboard.writeText(text || 'Ready');
+      appendLog('Console copied to clipboard');
+    });
+  }
+
   ${pageScript}
 });
 `;
@@ -478,56 +706,74 @@ function productsPage(): string {
       <button id="reload-products" class="btn btn-outline-primary" type="button">${renderIcon('refresh')}<span>刷新列表</span></button>
     </div>`,
     content: `<div class="row row-cards">
-      <div class="col-12 col-lg-8">
+      <div class="col-12">
         <div class="card">
-          <div class="card-body">
-            <div class="row g-3 align-items-end">
-              <div class="col-md-6">
-                <label class="form-label">Supplier ID</label>
-                <input id="supplierIdFilter" class="form-control" value="supplier123" placeholder="supplier123" />
+          <div class="card-header">
+            <div>
+              <h3 class="card-title">商品目录</h3>
+              <div class="text-secondary small mt-1">先从已有商品中提取 Supplier ID，下拉切换后自动加载。</div>
+            </div>
+          </div>
+          <div class="card-body border-bottom py-3">
+            <div class="supplier-toolbar">
+              <div class="text-secondary">
+                Supplier
+                <div class="ms-2 d-inline-block">
+                  <select id="supplierIdFilter" class="form-select form-select-sm" aria-label="Select supplier"></select>
+                </div>
               </div>
-              <div class="col-md-3">
-                <button id="load-products" class="btn btn-primary w-100" type="button">加载商品</button>
+              <div class="text-secondary">
+                Show
+                <div class="mx-2 d-inline-block">
+                  <input id="pageSize" type="number" class="form-control form-control-sm" value="8" min="1" max="100" size="3" aria-label="Products count">
+                </div>
+                entries
               </div>
-              <div class="col-md-3">
-                <div class="stat-soft">
-                  <div class="text-secondary small">已加载商品数</div>
-                  <div id="product-count" class="h2 m-0">0</div>
+              <div class="ms-auto text-secondary">
+                Search:
+                <div class="ms-2 d-inline-block">
+                  <input id="productSearch" type="text" class="form-control form-control-sm" placeholder="商品名 / productId" aria-label="Search products">
                 </div>
               </div>
             </div>
           </div>
-        </div>
-
-        <div class="card mt-3">
-          <div class="card-header">
-            <h3 class="card-title">商品目录</h3>
+          <div class="table-responsive">
+            <table class="table table-selectable card-table table-vcenter text-nowrap datatable">
+              <thead>
+                <tr>
+                  <th class="w-1"><input id="selectAllProducts" class="form-check-input m-0 align-middle" type="checkbox" aria-label="Select all products"></th>
+                  <th class="w-1">No.</th>
+                  <th>商品</th>
+                  <th>Supplier</th>
+                  <th>External ID</th>
+                  <th>Status</th>
+                  <th>Currency</th>
+                  <th>Timezone</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody id="productsTableBody"></tbody>
+            </table>
           </div>
-          <div class="card-body">
-            <div id="products" class="product-grid"></div>
-          </div>
-        </div>
-      </div>
-
-      <div class="col-12 col-lg-4">
-        <div class="card">
-          <div class="card-body">
-            <div class="text-uppercase text-secondary fw-bold small mb-2">当前规划</div>
-            <ul class="list-unstyled mb-0">
-              <li class="mb-2">1. 登录页仅输入 Admin Token</li>
-              <li class="mb-2">2. 商品列表支持按 supplier 切换</li>
-              <li class="mb-2">3. 保留 GYG booking 管理</li>
-              <li>4. 保留 GYG 访问日志</li>
-            </ul>
-          </div>
-        </div>
-
-        <div class="card mt-3">
-          <div class="card-header">
-            <h3 class="card-title">调试输出</h3>
-          </div>
-          <div class="card-body">
-            <pre id="out" class="debug-output m-0">Ready</pre>
+          <div class="card-footer">
+            <div class="row g-2 justify-content-center justify-content-sm-between">
+              <div class="col-auto d-flex align-items-center">
+                <p id="productsTableMeta" class="m-0 text-secondary">Showing <strong>0 to 0</strong> of <strong>0 entries</strong></p>
+              </div>
+              <div class="col-auto">
+                <ul class="pagination m-0 ms-auto">
+                  <li class="page-item">
+                    <button id="prevPage" class="page-link" type="button" aria-label="Previous">${renderIcon('chevronLeft')}</button>
+                  </li>
+                  <li class="page-item disabled">
+                    <span id="pageIndicator" class="page-link">1 / 1</span>
+                  </li>
+                  <li class="page-item">
+                    <button id="nextPage" class="page-link" type="button" aria-label="Next">${renderIcon('chevronRight')}</button>
+                  </li>
+                </ul>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -594,12 +840,20 @@ function productsPage(): string {
   });
 
   const script = sharedScript(`
-const out = document.getElementById('out');
-const productsEl = document.getElementById('products');
-const productCountEl = document.getElementById('product-count');
+const supplierSelect = document.getElementById('supplierIdFilter');
+const productsTableBody = document.getElementById('productsTableBody');
+const pageSizeInput = document.getElementById('pageSize');
+const productSearchInput = document.getElementById('productSearch');
+const productsTableMeta = document.getElementById('productsTableMeta');
+const pageIndicator = document.getElementById('pageIndicator');
+const prevPageBtn = document.getElementById('prevPage');
+const nextPageBtn = document.getElementById('nextPage');
+const selectAllProducts = document.getElementById('selectAllProducts');
+let allProducts = [];
+let currentPage = 1;
 
 function print(value) {
-  out.textContent = formatOutput(value);
+  appendLog(value);
 }
 
 function esc(value) {
@@ -610,50 +864,135 @@ function esc(value) {
     .replaceAll('"', '&quot;');
 }
 
-function renderProducts(products) {
-  productCountEl.textContent = String(products.length);
-  productsEl.innerHTML = '';
-
-  if (!products.length) {
-    productsEl.innerHTML = '<div class="empty-state">当前 supplier 下暂无商品</div>';
-    return;
+function statusBadge(status) {
+  const normalized = String(status || '').toLowerCase();
+  if (normalized === 'active') {
+    return '<span class="badge bg-success-lt text-success">active</span>';
   }
+  if (normalized === 'inactive') {
+    return '<span class="badge bg-secondary-lt text-secondary">inactive</span>';
+  }
+  return '<span class="badge bg-azure-lt text-azure">' + esc(status || '-') + '</span>';
+}
 
-  products.forEach((product) => {
-    const article = document.createElement('article');
-    article.className = 'card product-card';
-    article.innerHTML = '<div class="card-body d-flex flex-column gap-3">'
-      + '<div class="d-flex justify-content-between align-items-start gap-2">'
-      + '<div><div class="fw-semibold">' + esc(product.name || '-') + '</div>'
-      + '<div class="text-secondary small">' + esc(product.supplierId || '-') + '</div></div>'
-      + '<span class="badge bg-azure-lt text-azure">' + esc(product.status || '-') + '</span>'
-      + '</div>'
-      + '<div class="product-meta">external: ' + esc(product.productId || '-') + '</div>'
-      + '<div class="product-meta">internal: ' + esc(product.id || '-') + '</div>'
-      + '<div class="d-flex flex-wrap gap-2 mt-auto">'
-      + '<a class="btn btn-sm btn-primary" href="/products/' + encodeURIComponent(product.id) + '/calendar">商品详情</a>'
-      + '<span class="btn btn-sm btn-outline-secondary disabled">' + esc(product.currency || '-') + '</span>'
-      + '</div>'
-      + '</div>';
-    productsEl.appendChild(article);
+function getFilteredProducts() {
+  const supplierId = supplierSelect.value;
+  const keyword = productSearchInput.value.trim().toLowerCase();
+  return allProducts.filter((product) => {
+    if (supplierId && product.supplierId !== supplierId) {
+      return false;
+    }
+    if (!keyword) {
+      return true;
+    }
+    return [product.name, product.productId, product.id, product.supplierId]
+      .filter(Boolean)
+      .some((value) => String(value).toLowerCase().includes(keyword));
   });
 }
 
-async function loadProducts() {
-  const supplierId = document.getElementById('supplierIdFilter').value.trim();
-  const query = supplierId ? ('?supplierId=' + encodeURIComponent(supplierId)) : '';
-  const data = await api('/admin/products' + query);
-  renderProducts(data.data || []);
-  print(data);
+function renderProductsTable() {
+  const filtered = getFilteredProducts();
+  const pageSize = Math.max(1, Number(pageSizeInput.value || 8));
+  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+  currentPage = Math.min(currentPage, totalPages);
+  const startIndex = (currentPage - 1) * pageSize;
+  const pageRows = filtered.slice(startIndex, startIndex + pageSize);
+  productsTableBody.innerHTML = '';
+
+  if (!pageRows.length) {
+    productsTableBody.innerHTML = '<tr><td colspan="9"><div class="empty-state">当前筛选条件下没有商品</div></td></tr>';
+  } else {
+    pageRows.forEach((product, index) => {
+      const row = document.createElement('tr');
+      row.innerHTML =
+        '<td><input class="form-check-input m-0 align-middle table-selectable-check" type="checkbox" aria-label="Select product"></td>' +
+        '<td><span class="text-secondary">' + esc(String(startIndex + index + 1).padStart(3, '0')) + '</span></td>' +
+        '<td><div class="fw-semibold">' + esc(product.name || '-') + '</div><div class="text-secondary small">' + esc(product.id || '-') + '</div></td>' +
+        '<td>' + esc(product.supplierId || '-') + '</td>' +
+        '<td>' + esc(product.productId || '-') + '</td>' +
+        '<td>' + statusBadge(product.status) + '</td>' +
+        '<td>' + esc(product.currency || '-') + '</td>' +
+        '<td>' + esc(product.timezone || '-') + '</td>' +
+        '<td class="text-end"><div class="dropdown"><button class="btn dropdown-toggle align-text-top" data-bs-toggle="dropdown" type="button">Actions</button><div class="dropdown-menu dropdown-menu-end"><a class="dropdown-item" href="/products/' + encodeURIComponent(product.id) + '/calendar">商品详情</a></div></div></td>';
+      productsTableBody.appendChild(row);
+    });
+  }
+
+  const shownFrom = filtered.length ? startIndex + 1 : 0;
+  const shownTo = Math.min(startIndex + pageRows.length, filtered.length);
+  productsTableMeta.innerHTML = 'Showing <strong>' + shownFrom + ' to ' + shownTo + '</strong> of <strong>' + filtered.length + ' entries</strong>';
+  pageIndicator.textContent = currentPage + ' / ' + totalPages;
+  prevPageBtn.disabled = currentPage <= 1;
+  nextPageBtn.disabled = currentPage >= totalPages;
+  if (selectAllProducts) {
+    selectAllProducts.checked = false;
+  }
 }
 
-document.getElementById('load-products').addEventListener('click', () => {
-  loadProducts().catch((error) => print(String(error)));
-});
+function renderSupplierOptions() {
+  const supplierIds = Array.from(new Set(allProducts.map((product) => product.supplierId).filter(Boolean))).sort();
+  const currentValue = supplierSelect.value;
+  supplierSelect.innerHTML = supplierIds.map((supplierId) => '<option value="' + esc(supplierId) + '">' + esc(supplierId) + '</option>').join('');
+  if (!supplierSelect.innerHTML) {
+    supplierSelect.innerHTML = '<option value="">No suppliers</option>';
+    return;
+  }
+  if (currentValue && supplierIds.includes(currentValue)) {
+    supplierSelect.value = currentValue;
+  }
+  const createSupplierInput = document.getElementById('supplierId');
+  if (createSupplierInput && supplierSelect.value) {
+    createSupplierInput.value = supplierSelect.value;
+  }
+}
+
+async function loadProducts() {
+  const data = await api('/admin/products');
+  allProducts = data.data || [];
+  renderSupplierOptions();
+  renderProductsTable();
+  print(data);
+}
 
 document.getElementById('reload-products').addEventListener('click', () => {
   loadProducts().catch((error) => print(String(error)));
 });
+
+supplierSelect.addEventListener('change', () => {
+  currentPage = 1;
+  document.getElementById('supplierId').value = supplierSelect.value;
+  renderProductsTable();
+  print({ action: 'supplier_changed', supplierId: supplierSelect.value });
+});
+
+productSearchInput.addEventListener('input', () => {
+  currentPage = 1;
+  renderProductsTable();
+});
+
+pageSizeInput.addEventListener('change', () => {
+  currentPage = 1;
+  renderProductsTable();
+});
+
+prevPageBtn.addEventListener('click', () => {
+  currentPage = Math.max(1, currentPage - 1);
+  renderProductsTable();
+});
+
+nextPageBtn.addEventListener('click', () => {
+  currentPage += 1;
+  renderProductsTable();
+});
+
+if (selectAllProducts) {
+  selectAllProducts.addEventListener('change', () => {
+    document.querySelectorAll('#productsTableBody .table-selectable-check').forEach((checkbox) => {
+      checkbox.checked = selectAllProducts.checked;
+    });
+  });
+}
 
 document.getElementById('create-product-form').addEventListener('submit', async (event) => {
   event.preventDefault();
@@ -731,7 +1070,7 @@ function bookingsPage(): string {
             <h3 class="card-title">查询结果</h3>
           </div>
           <div class="card-body">
-            <pre id="out" class="debug-output m-0">Ready</pre>
+            <div class="text-secondary">查询结果将写入底部调试面板。</div>
           </div>
         </div>
       </div>
@@ -739,10 +1078,8 @@ function bookingsPage(): string {
   });
 
   const script = sharedScript(`
-const out = document.getElementById('out');
-
 function print(value) {
-  out.textContent = formatOutput(value);
+  appendLog(value);
 }
 
 async function loadBookings() {
@@ -833,7 +1170,7 @@ function logsPage(): string {
             <h3 class="card-title">调试输出</h3>
           </div>
           <div class="card-body">
-            <pre id="out" class="debug-output m-0">Ready</pre>
+            <div class="text-secondary">查询结果与错误信息将写入底部调试面板。</div>
           </div>
         </div>
       </div>
@@ -841,11 +1178,10 @@ function logsPage(): string {
   });
 
   const script = sharedScript(`
-const out = document.getElementById('out');
 const tbody = document.getElementById('tbody');
 
 function print(value) {
-  out.textContent = formatOutput(value);
+  appendLog(value);
 }
 
 function esc(value) {
@@ -1120,7 +1456,7 @@ function calendarPage(id: string, timezone: string): string {
             <h3 class="card-title">调试输出</h3>
           </div>
           <div class="card-body">
-            <pre id="out" class="debug-output m-0">Ready</pre>
+            <div class="text-secondary">所有返回结果、删除记录和推送日志都在底部调试面板查看。</div>
           </div>
         </div>
       </div>
@@ -1130,12 +1466,11 @@ function calendarPage(id: string, timezone: string): string {
   const script = sharedScript(`
 const PRODUCT_ID = ${JSON.stringify(id)};
 const PRODUCT_TIMEZONE = ${JSON.stringify(timezone)};
-const out = document.getElementById('out');
 const tableBody = document.getElementById('tableBody');
 let currentProductCurrency = 'CNY';
 
 function print(value) {
-  out.textContent = formatOutput(value);
+  appendLog(value);
 }
 
 function pad(value) {

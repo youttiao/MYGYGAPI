@@ -41,24 +41,48 @@ function renderDocument(title: string, body: string, script: string): string {
       border-right: 0;
     }
 
+    .app-sidebar {
+      box-shadow: inset -1px 0 0 rgba(255, 255, 255, 0.04);
+    }
+
+    .app-sidebar .container-fluid {
+      padding: 1rem 1rem 1.25rem;
+    }
+
+    .app-sidebar .navbar-collapse {
+      flex-direction: column;
+    }
+
     .navbar-brand-title {
       color: #fff;
-      font-size: 1rem;
+      font-size: 0.95rem;
       font-weight: 700;
-      letter-spacing: 0.02em;
+      letter-spacing: 0.01em;
+      line-height: 1.2;
     }
 
     .navbar-brand-subtitle {
       color: var(--gyg-sidebar-muted);
-      font-size: 0.75rem;
+      font-size: 0.6875rem;
       text-transform: uppercase;
-      letter-spacing: 0.08em;
+      letter-spacing: 0.14em;
+    }
+
+    .app-nav {
+      gap: 0.35rem;
     }
 
     .navbar-vertical .nav-link {
       color: var(--gyg-sidebar-muted);
-      border-radius: 0.75rem;
-      margin-bottom: 0.25rem;
+      border-radius: 0.9rem;
+      margin-bottom: 0;
+      padding: 0.95rem 1rem;
+      font-size: 1rem;
+      font-weight: 600;
+      line-height: 1.3;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
     }
 
     .navbar-vertical .nav-link.active,
@@ -75,6 +99,50 @@ function renderDocument(title: string, body: string, script: string): string {
       border-radius: 1.25rem;
       padding: 1.25rem;
       box-shadow: 0 14px 50px rgba(15, 23, 42, 0.06);
+    }
+
+    .nav-link-icon {
+      width: 1.25rem;
+      height: 1.25rem;
+      flex: 0 0 1.25rem;
+      opacity: 0.92;
+    }
+
+    .nav-link-label {
+      display: block;
+      letter-spacing: 0;
+    }
+
+    .btn .nav-link-icon {
+      width: 1rem;
+      height: 1rem;
+      flex: 0 0 auto;
+      margin-right: 0.4rem;
+    }
+
+    .sidebar-auth {
+      margin-top: auto;
+      padding-top: 1rem;
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .sidebar-auth-card {
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 1rem;
+      padding: 0.875rem;
+    }
+
+    .sidebar-auth-actions {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+      flex-wrap: nowrap;
+    }
+
+    .sidebar-auth-actions .btn {
+      white-space: nowrap;
     }
 
     .login-shell {
@@ -147,6 +215,22 @@ function renderDocument(title: string, body: string, script: string): string {
       color: var(--tblr-secondary);
       background: rgba(255, 255, 255, 0.7);
     }
+
+    @media (min-width: 992px) {
+      .app-sidebar .navbar-collapse {
+        min-height: calc(100vh - 4.5rem);
+      }
+    }
+
+    @media (max-width: 991.98px) {
+      .app-sidebar .navbar-collapse {
+        padding-top: 0.75rem;
+      }
+
+      .sidebar-auth {
+        margin-top: 1rem;
+      }
+    }
   </style>
 </head>
 <body>
@@ -159,6 +243,25 @@ ${script}
 </html>`;
 }
 
+function renderIcon(name: 'package' | 'calendar' | 'activity' | 'plus' | 'refresh' | 'shield'): string {
+  const icons = {
+    package:
+      '<svg xmlns="http://www.w3.org/2000/svg" class="nav-link-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 4v10l-7 4l-7-4V7z"/><path d="M12 12l7-4"/><path d="M12 12v9"/><path d="M12 12L5 8"/></svg>',
+    calendar:
+      '<svg xmlns="http://www.w3.org/2000/svg" class="nav-link-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"/><path d="M16 3v4"/><path d="M8 3v4"/><path d="M4 11h16"/></svg>',
+    activity:
+      '<svg xmlns="http://www.w3.org/2000/svg" class="nav-link-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h4l3 6l4-12l3 6h4"/></svg>',
+    plus:
+      '<svg xmlns="http://www.w3.org/2000/svg" class="nav-link-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg>',
+    refresh:
+      '<svg xmlns="http://www.w3.org/2000/svg" class="nav-link-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11a8.1 8.1 0 0 0-15.5-2m-.5-4v4h4"/><path d="M4 13a8.1 8.1 0 0 0 15.5 2m.5 4v-4h-4"/></svg>',
+    shield:
+      '<svg xmlns="http://www.w3.org/2000/svg" class="nav-link-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 4v5c0 5-3 8-7 9c-4-1-7-4-7-9V7z"/></svg>'
+  } as const;
+
+  return icons[name];
+}
+
 function renderAppShell(options: {
   activeNav: NavKey;
   pretitle: string;
@@ -168,16 +271,17 @@ function renderAppShell(options: {
   content: string;
 }): string {
   const navItems = [
-    { key: 'products', href: '/', label: '商品列表' },
-    { key: 'bookings', href: '/gyg-bookings', label: 'GYG Booking 管理' },
-    { key: 'logs', href: '/integration-logs', label: 'GYG 访问日志' }
+    { key: 'products', href: '/', label: '商品列表', icon: renderIcon('package') },
+    { key: 'bookings', href: '/gyg-bookings', label: 'GYG Booking 管理', icon: renderIcon('calendar') },
+    { key: 'logs', href: '/integration-logs', label: 'GYG 访问日志', icon: renderIcon('activity') }
   ];
 
   const navHtml = navItems
     .map(
       (item) => `<li class="nav-item">
         <a class="nav-link${item.key === options.activeNav ? ' active' : ''}" href="${item.href}">
-          <span class="nav-link-title">${item.label}</span>
+          ${item.icon}
+          <span class="nav-link-label">${item.label}</span>
         </a>
       </li>`
     )
@@ -202,7 +306,7 @@ function renderAppShell(options: {
   </div>
 
   <div id="app-shell" class="page" hidden>
-    <aside class="navbar navbar-vertical navbar-expand-lg" data-bs-theme="dark">
+    <aside class="navbar navbar-vertical navbar-expand-lg app-sidebar" data-bs-theme="dark">
       <div class="container-fluid">
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#sidebar-menu" aria-controls="sidebar-menu" aria-expanded="false" aria-label="Toggle navigation">
           <span class="navbar-toggler-icon"></span>
@@ -212,14 +316,19 @@ function renderAppShell(options: {
           <span class="navbar-brand-title">GYG Admin Console</span>
         </div>
         <div class="collapse navbar-collapse" id="sidebar-menu">
-          <ul class="navbar-nav pt-lg-3">
+          <ul class="navbar-nav app-nav pt-lg-2">
             ${navHtml}
           </ul>
-          <div class="mt-auto pt-4">
-            <div class="text-secondary small mb-2">当前认证</div>
-            <div class="d-flex align-items-center justify-content-between gap-2">
-              <span id="token-indicator" class="badge bg-azure-lt text-azure">未登录</span>
-              <button id="logout-btn" class="btn btn-sm btn-outline-light" type="button">退出</button>
+          <div class="sidebar-auth">
+            <div class="sidebar-auth-card">
+              <div class="d-flex align-items-center gap-2 text-secondary small mb-2">
+                ${renderIcon('shield')}
+                <span>当前认证</span>
+              </div>
+              <div class="sidebar-auth-actions">
+                <span id="token-indicator" class="badge bg-azure-lt text-azure">未登录</span>
+                <button id="logout-btn" class="btn btn-sm btn-outline-light" type="button">退出</button>
+              </div>
             </div>
           </div>
         </div>
@@ -363,10 +472,10 @@ function productsPage(): string {
     activeNav: 'products',
     pretitle: 'Products',
     title: '商品列表',
-    description: '先用 Tabler 的登录页、侧边栏、卡片和 Modal 组件重构后台入口。商品详情页继续沿用现有接口能力。',
+    description: '先按 Tabler 的组合式后台结构整理入口。右侧功能组件后续再逐步细化。',
     actions: `<div class="d-flex gap-2">
-      <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#create-product-modal" type="button">新建商品</button>
-      <button id="reload-products" class="btn btn-outline-primary" type="button">刷新列表</button>
+      <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#create-product-modal" type="button">${renderIcon('plus')}<span>新建商品</span></button>
+      <button id="reload-products" class="btn btn-outline-primary" type="button">${renderIcon('refresh')}<span>刷新列表</span></button>
     </div>`,
     content: `<div class="row row-cards">
       <div class="col-12 col-lg-8">

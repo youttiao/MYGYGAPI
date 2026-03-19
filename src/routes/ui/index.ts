@@ -380,6 +380,55 @@ function renderDocument(title: string, body: string, script: string): string {
       margin-top: 0.4rem;
     }
 
+    .choice-group {
+      display: grid;
+      gap: 0.5rem;
+    }
+
+    .choice-group-title {
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: var(--tblr-body-color);
+    }
+
+    .choice-pills {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+
+    .choice-pill {
+      position: relative;
+    }
+
+    .choice-pill input {
+      position: absolute;
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .choice-pill span {
+      display: inline-flex;
+      align-items: center;
+      min-height: 2.5rem;
+      padding: 0.55rem 0.85rem;
+      border-radius: 999px;
+      border: 1px solid rgba(15, 23, 42, 0.12);
+      background: rgba(255, 255, 255, 0.8);
+      color: var(--tblr-body-color);
+      font-size: 0.875rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.16s ease;
+    }
+
+    .choice-pill input:checked + span {
+      background: rgba(32, 107, 196, 0.12);
+      border-color: rgba(32, 107, 196, 0.42);
+      color: var(--gyg-accent);
+      box-shadow: inset 0 0 0 1px rgba(32, 107, 196, 0.08);
+    }
+
     .stat-soft {
       border-radius: 1rem;
       background: #f6f8fc;
@@ -930,25 +979,31 @@ function productsPage(): string {
                   <input id="currency" class="form-control" value="CNY" required />
                 </div>
                 <div class="col-md-4">
-                  <label class="form-label">可用性类型 Availability</label>
-                  <select id="availabilityType" class="form-select">
-                    <option value="TIME_POINT">time point</option>
-                    <option value="TIME_PERIOD">time period</option>
-                  </select>
+                  <div class="choice-group">
+                    <div class="choice-group-title">可用性类型 Availability</div>
+                    <div class="choice-pills">
+                      <label class="choice-pill"><input type="radio" name="availabilityType" value="TIME_POINT" checked /><span>time point</span></label>
+                      <label class="choice-pill"><input type="radio" name="availabilityType" value="TIME_PERIOD" /><span>time period</span></label>
+                    </div>
+                  </div>
                 </div>
                 <div class="col-md-4">
-                  <label class="form-label">产品类型 Product Type</label>
-                  <select id="productType" class="form-select">
-                    <option value="INDIVIDUAL">individual</option>
-                    <option value="GROUP">group</option>
-                  </select>
+                  <div class="choice-group">
+                    <div class="choice-group-title">产品类型 Product Type</div>
+                    <div class="choice-pills">
+                      <label class="choice-pill"><input type="radio" name="productType" value="INDIVIDUAL" checked /><span>individual</span></label>
+                      <label class="choice-pill"><input type="radio" name="productType" value="GROUP" /><span>group</span></label>
+                    </div>
+                  </div>
                 </div>
                 <div class="col-md-4">
-                  <label class="form-label">定价模式 Pricing</label>
-                  <select id="pricingMode" class="form-select">
-                    <option value="MANUAL_IN_GYG">MANUAL_IN_GYG</option>
-                    <option value="PRICE_OVER_API">PRICE_OVER_API</option>
-                  </select>
+                  <div class="choice-group">
+                    <div class="choice-group-title">定价模式 Pricing</div>
+                    <div class="choice-pills">
+                      <label class="choice-pill"><input type="radio" name="pricingMode" value="MANUAL_IN_GYG" checked /><span>MANUAL_IN_GYG</span></label>
+                      <label class="choice-pill"><input type="radio" name="pricingMode" value="PRICE_OVER_API" /><span>PRICE_OVER_API</span></label>
+                    </div>
+                  </div>
                 </div>
                 <div class="col-md-4">
                   <label class="form-label">状态 Status</label>
@@ -974,6 +1029,7 @@ function productsPage(): string {
   });
 
   const script = sharedScript(`
+const PRODUCTS_SUPPLIER_KEY = 'products_supplier_filter';
 const supplierSelect = document.getElementById('supplierIdFilter');
 const productsTableBody = document.getElementById('productsTableBody');
 const pageSizeInput = document.getElementById('pageSize');
@@ -983,6 +1039,7 @@ const pageIndicator = document.getElementById('pageIndicator');
 const prevPageBtn = document.getElementById('prevPage');
 const nextPageBtn = document.getElementById('nextPage');
 const selectAllProducts = document.getElementById('selectAllProducts');
+const createProductForm = document.getElementById('create-product-form');
 let allProducts = [];
 let currentPage = 1;
 
@@ -1007,6 +1064,52 @@ function statusBadge(status) {
     return '<span class="badge bg-secondary-lt text-secondary">inactive</span>';
   }
   return '<span class="badge bg-azure-lt text-azure">' + esc(status || '-') + '</span>';
+}
+
+function getRadioValue(name) {
+  const checked = document.querySelector('input[name="' + name + '"]:checked');
+  return checked ? checked.value : '';
+}
+
+function setRadioValue(name, value) {
+  document.querySelectorAll('input[name="' + name + '"]').forEach((input) => {
+    input.checked = input.value === value;
+  });
+}
+
+function getSavedSupplierId() {
+  return localStorage.getItem(PRODUCTS_SUPPLIER_KEY) || '';
+}
+
+function setSavedSupplierId(value) {
+  if (value) {
+    localStorage.setItem(PRODUCTS_SUPPLIER_KEY, value);
+    return;
+  }
+  localStorage.removeItem(PRODUCTS_SUPPLIER_KEY);
+}
+
+function closeCreateProductModal() {
+  const modalElement = document.getElementById('create-product-modal');
+  if (!modalElement) {
+    return;
+  }
+
+  try {
+    if (window.bootstrap && window.bootstrap.Modal) {
+      window.bootstrap.Modal.getOrCreateInstance(modalElement).hide();
+    }
+  } catch (error) {
+    print({ action: 'close_modal_fallback', error: String(error) });
+  }
+
+  modalElement.classList.remove('show');
+  modalElement.setAttribute('aria-hidden', 'true');
+  modalElement.style.display = 'none';
+  document.body.classList.remove('modal-open');
+  document.body.style.removeProperty('overflow');
+  document.body.style.removeProperty('padding-right');
+  document.querySelectorAll('.modal-backdrop').forEach((node) => node.remove());
 }
 
 function getFilteredProducts() {
@@ -1066,15 +1169,19 @@ function renderProductsTable() {
 
 function renderSupplierOptions() {
   const supplierIds = Array.from(new Set(allProducts.map((product) => product.supplierId).filter(Boolean))).sort();
-  const currentValue = supplierSelect.value;
+  const currentValue = supplierSelect.value || getSavedSupplierId();
   supplierSelect.innerHTML = supplierIds.map((supplierId) => '<option value="' + esc(supplierId) + '">' + esc(supplierId) + '</option>').join('');
   if (!supplierSelect.innerHTML) {
     supplierSelect.innerHTML = '<option value="">No suppliers</option>';
+    setSavedSupplierId('');
     return;
   }
   if (currentValue && supplierIds.includes(currentValue)) {
     supplierSelect.value = currentValue;
+  } else if (supplierIds.length) {
+    supplierSelect.value = supplierIds[0];
   }
+  setSavedSupplierId(supplierSelect.value);
   const createSupplierInput = document.getElementById('supplierId');
   if (createSupplierInput && supplierSelect.value) {
     createSupplierInput.value = supplierSelect.value;
@@ -1095,6 +1202,7 @@ document.getElementById('reload-products').addEventListener('click', () => {
 
 supplierSelect.addEventListener('change', () => {
   currentPage = 1;
+  setSavedSupplierId(supplierSelect.value);
   document.getElementById('supplierId').value = supplierSelect.value;
   renderProductsTable();
   print({ action: 'supplier_changed', supplierId: supplierSelect.value });
@@ -1128,9 +1236,14 @@ if (selectAllProducts) {
   });
 }
 
-document.getElementById('create-product-form').addEventListener('submit', async (event) => {
+createProductForm.addEventListener('submit', async (event) => {
   event.preventDefault();
+  const submitButton = createProductForm.querySelector('button[type="submit"]');
   try {
+    if (submitButton) {
+      submitButton.disabled = true;
+      submitButton.textContent = '创建中...';
+    }
     const payload = {
       supplierId: document.getElementById('supplierId').value.trim(),
       productId: document.getElementById('productId').value.trim(),
@@ -1138,9 +1251,9 @@ document.getElementById('create-product-form').addEventListener('submit', async 
       description: document.getElementById('description').value.trim(),
       timezone: document.getElementById('timezone').value.trim(),
       currency: document.getElementById('currency').value.trim(),
-      availabilityType: document.getElementById('availabilityType').value,
-      productType: document.getElementById('productType').value,
-      pricingMode: document.getElementById('pricingMode').value,
+      availabilityType: getRadioValue('availabilityType'),
+      productType: getRadioValue('productType'),
+      pricingMode: getRadioValue('pricingMode'),
       status: document.getElementById('status').value,
       destinationCity: 'Shanghai',
       destinationCountry: 'CHN'
@@ -1150,16 +1263,24 @@ document.getElementById('create-product-form').addEventListener('submit', async 
       body: JSON.stringify(payload)
     });
     print(data);
-    const modalElement = document.getElementById('create-product-modal');
-    window.bootstrap.Modal.getOrCreateInstance(modalElement).hide();
-    event.target.reset();
-    document.getElementById('status').value = 'active';
-    document.getElementById('availabilityType').value = 'TIME_POINT';
-    document.getElementById('productType').value = 'INDIVIDUAL';
-    document.getElementById('pricingMode').value = 'MANUAL_IN_GYG';
     await loadProducts();
+    closeCreateProductModal();
+    createProductForm.reset();
+    document.getElementById('status').value = 'active';
+    setRadioValue('availabilityType', 'TIME_POINT');
+    setRadioValue('productType', 'INDIVIDUAL');
+    setRadioValue('pricingMode', 'MANUAL_IN_GYG');
+    if (supplierSelect.value) {
+      document.getElementById('supplierId').value = supplierSelect.value;
+    }
+    print({ action: 'create_product_success', productId: payload.productId });
   } catch (error) {
     print(String(error));
+  } finally {
+    if (submitButton) {
+      submitButton.disabled = false;
+      submitButton.textContent = '创建商品';
+    }
   }
 });
 

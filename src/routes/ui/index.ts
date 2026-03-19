@@ -452,6 +452,233 @@ function renderDocument(title: string, body: string, script: string): string {
       border-color: rgba(148, 163, 184, 0.12);
     }
 
+    .availability-summary {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      align-items: center;
+    }
+
+    .availability-summary .badge {
+      font-size: 0.875rem;
+      padding: 0.65rem 0.85rem;
+      border-radius: 999px;
+    }
+
+    .rule-card {
+      height: 100%;
+    }
+
+    .rule-quick-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+
+    .weekday-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 0.5rem;
+    }
+
+    .weekday-grid .btn {
+      text-align: center;
+      justify-content: center;
+      font-weight: 700;
+    }
+
+    .selected-date-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      min-height: 2.5rem;
+    }
+
+    .calendar-shell {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 1rem;
+    }
+
+    .month-card {
+      border: 1px solid rgba(15, 23, 42, 0.08);
+      border-radius: 1rem;
+      background: rgba(255, 255, 255, 0.76);
+      padding: 1rem;
+    }
+
+    .month-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+      margin-bottom: 0.75rem;
+    }
+
+    .weekdays-row,
+    .days-grid {
+      display: grid;
+      grid-template-columns: repeat(7, minmax(0, 1fr));
+      gap: 0.5rem;
+    }
+
+    .weekdays-row {
+      margin-bottom: 0.5rem;
+    }
+
+    .weekday-label {
+      text-align: center;
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--tblr-secondary);
+      letter-spacing: 0.04em;
+    }
+
+    .day-cell {
+      min-height: 118px;
+      border-radius: 1rem;
+      border: 1px solid rgba(15, 23, 42, 0.08);
+      padding: 0.65rem;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 0.4rem;
+      background: rgba(255, 255, 255, 0.9);
+      transition: transform 0.16s ease, box-shadow 0.16s ease;
+      cursor: pointer;
+    }
+
+    .day-cell:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
+    }
+
+    .day-cell.is-outside {
+      opacity: 0.35;
+      cursor: default;
+    }
+
+    .day-cell.is-today {
+      box-shadow: inset 0 0 0 2px rgba(32, 107, 196, 0.42);
+    }
+
+    .day-cell.is-open {
+      border-color: rgba(34, 197, 94, 0.28);
+      background: linear-gradient(180deg, rgba(220, 252, 231, 0.95), rgba(240, 253, 244, 0.88));
+    }
+
+    .day-cell.is-manual-closed {
+      border-color: rgba(239, 68, 68, 0.3);
+      background: linear-gradient(180deg, rgba(254, 226, 226, 0.98), rgba(254, 242, 242, 0.92));
+    }
+
+    .day-cell.is-weekly-closed {
+      border-color: rgba(59, 130, 246, 0.24);
+      background: linear-gradient(180deg, rgba(219, 234, 254, 0.96), rgba(239, 246, 255, 0.9));
+    }
+
+    .day-cell.is-advance-closed {
+      border-color: rgba(249, 115, 22, 0.28);
+      background: linear-gradient(180deg, rgba(255, 237, 213, 0.96), rgba(255, 247, 237, 0.9));
+    }
+
+    .day-cell.is-past {
+      border-style: dashed;
+      background: rgba(241, 245, 249, 0.9);
+    }
+
+    .day-topline {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 0.35rem;
+    }
+
+    .day-number {
+      font-size: 1rem;
+      font-weight: 800;
+      line-height: 1;
+    }
+
+    .day-emoji {
+      font-size: 1.2rem;
+      line-height: 1;
+    }
+
+    .day-status {
+      font-size: 0.78rem;
+      font-weight: 700;
+      line-height: 1.2;
+    }
+
+    .day-reason {
+      font-size: 0.72rem;
+      color: var(--tblr-secondary);
+      line-height: 1.25;
+    }
+
+    .calendar-legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+    }
+
+    .calendar-legend .badge {
+      font-size: 0.8rem;
+      padding: 0.45rem 0.65rem;
+    }
+
+    html[data-bs-theme='dark'] .month-card {
+      background: rgba(15, 23, 42, 0.6);
+      border-color: rgba(148, 163, 184, 0.12);
+    }
+
+    html[data-bs-theme='dark'] .day-cell {
+      border-color: rgba(148, 163, 184, 0.12);
+      background: rgba(15, 23, 42, 0.48);
+    }
+
+    html[data-bs-theme='dark'] .day-cell.is-open {
+      background: linear-gradient(180deg, rgba(20, 83, 45, 0.82), rgba(5, 46, 22, 0.72));
+      border-color: rgba(74, 222, 128, 0.24);
+    }
+
+    html[data-bs-theme='dark'] .day-cell.is-manual-closed {
+      background: linear-gradient(180deg, rgba(127, 29, 29, 0.84), rgba(69, 10, 10, 0.76));
+      border-color: rgba(248, 113, 113, 0.24);
+    }
+
+    html[data-bs-theme='dark'] .day-cell.is-weekly-closed {
+      background: linear-gradient(180deg, rgba(30, 58, 138, 0.82), rgba(15, 23, 42, 0.76));
+      border-color: rgba(96, 165, 250, 0.24);
+    }
+
+    html[data-bs-theme='dark'] .day-cell.is-advance-closed {
+      background: linear-gradient(180deg, rgba(124, 45, 18, 0.84), rgba(67, 20, 7, 0.76));
+      border-color: rgba(251, 146, 60, 0.24);
+    }
+
+    html[data-bs-theme='dark'] .day-cell.is-past {
+      background: rgba(30, 41, 59, 0.68);
+    }
+
+    @media (max-width: 1199.98px) {
+      .calendar-shell {
+        grid-template-columns: minmax(0, 1fr);
+      }
+    }
+
+    @media (max-width: 767.98px) {
+      .weekday-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .day-cell {
+        min-height: 98px;
+      }
+    }
+
     .stat-soft {
       border-radius: 1rem;
       background: #f6f8fc;
@@ -1203,7 +1430,7 @@ function renderProductsTable() {
         '<td>' + statusBadge(product.status) + '</td>' +
         '<td>' + esc(product.currency || '-') + '</td>' +
         '<td>' + esc(product.timezone || '-') + '</td>' +
-        '<td class="text-end"><div class="dropdown"><button class="btn dropdown-toggle align-text-top" data-bs-toggle="dropdown" type="button">Actions</button><div class="dropdown-menu dropdown-menu-end"><a class="dropdown-item" href="/products/' + encodeURIComponent(product.id) + '">商品详情</a></div></div></td>';
+        '<td class="text-end"><div class="dropdown"><button class="btn dropdown-toggle align-text-top" data-bs-toggle="dropdown" type="button">Actions</button><div class="dropdown-menu dropdown-menu-end"><a class="dropdown-item" href="/products/' + encodeURIComponent(product.id) + '">Availability 工作台</a><a class="dropdown-item" href="/products/' + encodeURIComponent(product.id) + '/settings">产品设置 / 调试</a></div></div></td>';
       productsTableBody.appendChild(row);
     });
   }
@@ -1553,6 +1780,520 @@ document.getElementById('load').addEventListener('click', () => {
   return renderDocument('GYG 访问日志', body, script);
 }
 
+function availabilityWorkbenchPage(id: string, timezone: string): string {
+  const safeId = escapeHtml(id);
+  const body = renderAppShell({
+    activeNav: 'products',
+    pretitle: 'Availability',
+    title: 'Availability 工作台',
+    description: '按规则维护可售日期。默认可售，重点管理提前停售、每周关闭和手动关闭日期。',
+    actions: `<div class="d-flex gap-2">
+      <a class="btn btn-outline-primary" href="/products/${safeId}/settings">进入产品设置页</a>
+      <a class="btn btn-outline-secondary" href="/">返回商品列表</a>
+    </div>`,
+    content: `<div class="row row-cards">
+      <div class="col-12">
+        <div class="card">
+          <div class="card-body">
+            <div class="row g-3 align-items-center">
+              <div class="col-lg">
+                <div id="availabilityHeadline" class="h2 mb-2">加载商品中...</div>
+                <div id="availabilitySubline" class="text-secondary">正在读取商品规则和日历状态。</div>
+              </div>
+              <div class="col-12 col-lg-auto">
+                <div id="availabilitySummary" class="availability-summary"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-12 col-xl-4">
+        <div class="row row-cards">
+          <div class="col-12">
+            <div class="card rule-card">
+              <div class="card-header">
+                <h3 class="card-title">⏳ 提前停售</h3>
+              </div>
+              <div class="card-body d-grid gap-3">
+                <label class="form-label mb-0">
+                  <span class="form-label-description">提前 N 天停售</span>
+                  <input id="advanceCloseDays" type="number" min="0" value="0" class="form-control" />
+                </label>
+                <div class="rule-quick-actions">
+                  <button class="btn btn-outline-primary" type="button" data-quick-close="0">0</button>
+                  <button class="btn btn-outline-primary" type="button" data-quick-close="1">1</button>
+                  <button class="btn btn-outline-primary" type="button" data-quick-close="3">3</button>
+                  <button class="btn btn-outline-primary" type="button" data-quick-close="7">7</button>
+                  <button class="btn btn-outline-primary" type="button" data-quick-close="14">14</button>
+                  <button class="btn btn-outline-primary" type="button" data-quick-close="30">30</button>
+                </div>
+                <div class="text-secondary small">修改后会立即在下方日历预演，保存后写入规则。</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-12">
+            <div class="card rule-card">
+              <div class="card-header">
+                <h3 class="card-title">📅 每周关闭</h3>
+              </div>
+              <div class="card-body">
+                <div class="weekday-grid">
+                  <input class="btn-check" type="checkbox" id="weekday-1" value="1" />
+                  <label class="btn btn-outline-primary" for="weekday-1">周一</label>
+                  <input class="btn-check" type="checkbox" id="weekday-2" value="2" />
+                  <label class="btn btn-outline-primary" for="weekday-2">周二</label>
+                  <input class="btn-check" type="checkbox" id="weekday-3" value="3" />
+                  <label class="btn btn-outline-primary" for="weekday-3">周三</label>
+                  <input class="btn-check" type="checkbox" id="weekday-4" value="4" />
+                  <label class="btn btn-outline-primary" for="weekday-4">周四</label>
+                  <input class="btn-check" type="checkbox" id="weekday-5" value="5" />
+                  <label class="btn btn-outline-primary" for="weekday-5">周五</label>
+                  <input class="btn-check" type="checkbox" id="weekday-6" value="6" />
+                  <label class="btn btn-outline-primary" for="weekday-6">周六</label>
+                  <input class="btn-check" type="checkbox" id="weekday-7" value="7" />
+                  <label class="btn btn-outline-primary" for="weekday-7">周日</label>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-12">
+            <div class="card rule-card">
+              <div class="card-header">
+                <h3 class="card-title">🔴 特殊日期关闭</h3>
+              </div>
+              <div class="card-body d-grid gap-3">
+                <div class="row g-3">
+                  <div class="col-6">
+                    <label class="form-label mb-0">
+                      <span class="form-label-description">开始日期</span>
+                      <input id="closeRangeFrom" type="date" class="form-control" />
+                    </label>
+                  </div>
+                  <div class="col-6">
+                    <label class="form-label mb-0">
+                      <span class="form-label-description">结束日期</span>
+                      <input id="closeRangeTo" type="date" class="form-control" />
+                    </label>
+                  </div>
+                </div>
+                <div class="d-flex gap-2">
+                  <button id="addClosedRange" class="btn btn-outline-danger" type="button">添加关闭区间</button>
+                  <button id="clearClosedDates" class="btn btn-outline-secondary" type="button">清空手动关闭</button>
+                </div>
+                <div id="selectedClosedDates" class="selected-date-list"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-12">
+            <div class="card rule-card">
+              <div class="card-header">
+                <h3 class="card-title">操作</h3>
+              </div>
+              <div class="card-body d-grid gap-2">
+                <button id="saveAvailabilityRules" class="btn btn-primary" type="button">保存规则</button>
+                <button id="resetAvailabilityRules" class="btn btn-outline-secondary" type="button">恢复已保存规则</button>
+                <button id="openSettingsPage" class="btn btn-outline-primary" type="button">打开产品设置页</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-12 col-xl-8">
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <h3 class="card-title">日历预演</h3>
+              <div class="text-secondary small">周一为第一列。规则修改后会立刻反映在下面的月历中。</div>
+            </div>
+            <div class="ms-auto d-flex gap-2">
+              <button id="calendarPrev" class="btn btn-outline-secondary" type="button">上一月</button>
+              <button id="calendarToday" class="btn btn-outline-primary" type="button">回到今天</button>
+              <button id="calendarNext" class="btn btn-outline-secondary" type="button">下一月</button>
+            </div>
+          </div>
+          <div class="card-body">
+            <div class="calendar-legend">
+              <span class="badge bg-green-lt text-green">🟢 可售</span>
+              <span class="badge bg-red-lt text-red">🔴 手动关闭</span>
+              <span class="badge bg-orange-lt text-orange">⏳ 提前停售</span>
+              <span class="badge bg-azure-lt text-azure">🔁 周规则关闭</span>
+              <span class="badge bg-secondary-lt text-secondary">📍 今天</span>
+            </div>
+            <div id="calendarShell" class="calendar-shell"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="offcanvas offcanvas-end" tabindex="-1" id="dayDetailOffcanvas" aria-labelledby="dayDetailTitle">
+      <div class="offcanvas-header">
+        <div>
+          <div class="text-uppercase text-secondary fw-bold small">Date Detail</div>
+          <h2 class="offcanvas-title" id="dayDetailTitle">选择某一天</h2>
+        </div>
+        <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+      </div>
+      <div class="offcanvas-body">
+        <div id="dayDetailBody" class="d-grid gap-3 text-secondary">点击日历中的某一天查看状态解释。</div>
+      </div>
+    </div>`
+  });
+
+  const script = sharedScript(`
+const PRODUCT_ID = ${JSON.stringify(id)};
+const PRODUCT_TIMEZONE = ${JSON.stringify(timezone)};
+const WEEKDAY_LABELS = ['周一', '周二', '周三', '周四', '周五', '周六', '周日'];
+let workbenchProduct = null;
+let savedRuleState = {
+  advanceCloseDays: 0,
+  weeklyClosedDays: [],
+  closedDates: []
+};
+let draftRuleState = {
+  advanceCloseDays: 0,
+  weeklyClosedDays: [],
+  closedDates: []
+};
+let calendarOffset = 0;
+
+function print(value) {
+  appendLog(value);
+}
+
+function toDateStringInTimeZone(date, timeZone) {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit'
+  }).formatToParts(date);
+  const map = Object.fromEntries(parts.filter((part) => part.type !== 'literal').map((part) => [part.type, part.value]));
+  return map.year + '-' + map.month + '-' + map.day;
+}
+
+function todayInProductTimeZone() {
+  return toDateStringInTimeZone(new Date(), PRODUCT_TIMEZONE);
+}
+
+function parseDateOnly(dateStr) {
+  return new Date(dateStr + 'T00:00:00.000Z');
+}
+
+function formatDateOnly(date) {
+  return date.toISOString().slice(0, 10);
+}
+
+function addDays(dateStr, days) {
+  const value = parseDateOnly(dateStr);
+  value.setUTCDate(value.getUTCDate() + days);
+  return formatDateOnly(value);
+}
+
+function diffDays(fromStr, toStr) {
+  const from = parseDateOnly(fromStr);
+  const to = parseDateOnly(toStr);
+  return Math.round((to.getTime() - from.getTime()) / 86400000);
+}
+
+function weekdayMonFirst(dateStr) {
+  const day = parseDateOnly(dateStr).getUTCDay();
+  return day === 0 ? 7 : day;
+}
+
+function monthAnchor(offset) {
+  const today = parseDateOnly(todayInProductTimeZone());
+  return new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth() + offset, 1));
+}
+
+function monthTitle(date) {
+  return new Intl.DateTimeFormat('zh-CN', {
+    timeZone: 'UTC',
+    year: 'numeric',
+    month: 'long'
+  }).format(date);
+}
+
+function getCheckedWeekdays() {
+  return Array.from(document.querySelectorAll('[id^="weekday-"]:checked'))
+    .map((input) => Number(input.value))
+    .sort((a, b) => a - b);
+}
+
+function syncInputsFromDraft() {
+  document.getElementById('advanceCloseDays').value = String(draftRuleState.advanceCloseDays);
+  document.querySelectorAll('[id^="weekday-"]').forEach((input) => {
+    input.checked = draftRuleState.weeklyClosedDays.includes(Number(input.value));
+  });
+  renderSelectedClosedDates();
+}
+
+function syncDraftFromInputs() {
+  draftRuleState.advanceCloseDays = Math.max(0, Number(document.getElementById('advanceCloseDays').value || 0));
+  draftRuleState.weeklyClosedDays = getCheckedWeekdays();
+}
+
+function renderSelectedClosedDates() {
+  const container = document.getElementById('selectedClosedDates');
+  container.innerHTML = '';
+  if (!draftRuleState.closedDates.length) {
+    container.innerHTML = '<span class="text-secondary small">当前没有手动关闭日期</span>';
+    return;
+  }
+  draftRuleState.closedDates.forEach((dateStr) => {
+    const badge = document.createElement('button');
+    badge.type = 'button';
+    badge.className = 'btn btn-sm btn-outline-danger';
+    badge.textContent = '🔴 ' + dateStr;
+    badge.addEventListener('click', () => {
+      draftRuleState.closedDates = draftRuleState.closedDates.filter((item) => item !== dateStr);
+      renderSelectedClosedDates();
+      renderWorkbench();
+    });
+    container.appendChild(badge);
+  });
+}
+
+function getDateStatus(dateStr) {
+  const today = todayInProductTimeZone();
+  const reasons = [];
+
+  if (dateStr < today) {
+    return { key: 'past', emoji: '⬜', label: '过去', reason: '过去日期', reasons };
+  }
+
+  if (draftRuleState.closedDates.includes(dateStr)) {
+    reasons.push('手动关闭');
+    return { key: 'manual-closed', emoji: '🔴', label: '关闭', reason: '手动关闭', reasons };
+  }
+
+  if (draftRuleState.advanceCloseDays > 0 && diffDays(today, dateStr) < draftRuleState.advanceCloseDays) {
+    reasons.push('提前' + draftRuleState.advanceCloseDays + '天停售');
+    return { key: 'advance-closed', emoji: '⏳', label: '停售', reason: '提前关闭', reasons };
+  }
+
+  const weekday = weekdayMonFirst(dateStr);
+  if (draftRuleState.weeklyClosedDays.includes(weekday)) {
+    reasons.push(WEEKDAY_LABELS[weekday - 1] + '关闭');
+    return { key: 'weekly-closed', emoji: '🔁', label: '周关闭', reason: WEEKDAY_LABELS[weekday - 1], reasons };
+  }
+
+  reasons.push('默认可售');
+  return { key: 'open', emoji: '🟢', label: '可售', reason: '默认可售', reasons };
+}
+
+function renderSummary() {
+  const summary = document.getElementById('availabilitySummary');
+  const weeklyText = draftRuleState.weeklyClosedDays.length
+    ? draftRuleState.weeklyClosedDays.map((day) => WEEKDAY_LABELS[day - 1]).join(' / ')
+    : '无';
+  summary.innerHTML =
+    '<span class="badge bg-green-lt text-green">🟢 默认可售</span>' +
+    '<span class="badge bg-orange-lt text-orange">⏳ 提前关闭 ' + draftRuleState.advanceCloseDays + ' 天</span>' +
+    '<span class="badge bg-azure-lt text-azure">📅 每周关闭 ' + esc(weeklyText) + '</span>' +
+    '<span class="badge bg-red-lt text-red">🔴 手动关闭 ' + draftRuleState.closedDates.length + ' 天</span>';
+}
+
+function buildMonthCells(anchor) {
+  const firstOfMonth = new Date(Date.UTC(anchor.getUTCFullYear(), anchor.getUTCMonth(), 1));
+  const startOffset = (firstOfMonth.getUTCDay() + 6) % 7;
+  const startDate = new Date(firstOfMonth);
+  startDate.setUTCDate(firstOfMonth.getUTCDate() - startOffset);
+  const cells = [];
+  for (let i = 0; i < 42; i += 1) {
+    const current = new Date(startDate);
+    current.setUTCDate(startDate.getUTCDate() + i);
+    cells.push({
+      date: current,
+      dateStr: formatDateOnly(current),
+      isCurrentMonth: current.getUTCMonth() === anchor.getUTCMonth()
+    });
+  }
+  return cells;
+}
+
+function openDayDetail(dateStr) {
+  const status = getDateStatus(dateStr);
+  const today = todayInProductTimeZone();
+  document.getElementById('dayDetailTitle').textContent = dateStr;
+  document.getElementById('dayDetailBody').innerHTML =
+    '<div class="h3 mb-0">' + status.emoji + ' ' + status.label + '</div>' +
+    '<div class="text-secondary">今天：' + today + '</div>' +
+    '<div><strong>状态原因：</strong> ' + esc(status.reason) + '</div>' +
+    '<div><strong>规则命中：</strong> ' + esc(status.reasons.join('，') || '无') + '</div>' +
+    '<div class="d-flex gap-2"><button id="closeSingleDate" class="btn btn-outline-danger" type="button">关闭当天</button><button id="openSingleDate" class="btn btn-outline-primary" type="button">恢复可售</button></div>';
+
+  document.getElementById('closeSingleDate').addEventListener('click', () => {
+    if (!draftRuleState.closedDates.includes(dateStr)) {
+      draftRuleState.closedDates = draftRuleState.closedDates.concat(dateStr).sort();
+      renderSelectedClosedDates();
+      renderWorkbench();
+    }
+  });
+
+  document.getElementById('openSingleDate').addEventListener('click', () => {
+    draftRuleState.closedDates = draftRuleState.closedDates.filter((item) => item !== dateStr);
+    renderSelectedClosedDates();
+    renderWorkbench();
+  });
+
+  window.bootstrap.Offcanvas.getOrCreateInstance(document.getElementById('dayDetailOffcanvas')).show();
+}
+
+function renderCalendarMonth(anchor, index) {
+  const month = document.createElement('div');
+  month.className = 'month-card';
+  const today = todayInProductTimeZone();
+  const cells = buildMonthCells(anchor);
+  const weekdays = WEEKDAY_LABELS.map((label) => '<div class="weekday-label">' + label.slice(1) + '</div>').join('');
+  const days = cells.map((cell) => {
+    const status = getDateStatus(cell.dateStr);
+    const classes = [
+      'day-cell',
+      'is-' + status.key,
+      cell.isCurrentMonth ? '' : 'is-outside',
+      cell.dateStr === today ? 'is-today' : ''
+    ].filter(Boolean).join(' ');
+    return '<button type="button" class="' + classes + '" data-date="' + cell.dateStr + '" ' + (cell.isCurrentMonth ? '' : 'disabled') + '>' +
+      '<div class="day-topline"><div class="day-number">' + Number(cell.dateStr.slice(-2)) + '</div><div class="day-emoji">' + status.emoji + '</div></div>' +
+      '<div class="day-status">' + status.label + (cell.dateStr === today ? ' · Today' : '') + '</div>' +
+      '<div class="day-reason">' + esc(status.reason) + '</div>' +
+      '</button>';
+  }).join('');
+
+  month.innerHTML =
+    '<div class="month-header"><div><div class="text-uppercase text-secondary fw-bold small">Month ' + (index + 1) + '</div><div class="h3 mb-0">' + monthTitle(anchor) + '</div></div></div>' +
+    '<div class="weekdays-row">' + weekdays + '</div>' +
+    '<div class="days-grid">' + days + '</div>';
+  return month;
+}
+
+function renderCalendar() {
+  const shell = document.getElementById('calendarShell');
+  shell.innerHTML = '';
+  [calendarOffset, calendarOffset + 1].forEach((offset, index) => {
+    shell.appendChild(renderCalendarMonth(monthAnchor(offset), index));
+  });
+  shell.querySelectorAll('.day-cell[data-date]').forEach((button) => {
+    button.addEventListener('click', () => openDayDetail(button.getAttribute('data-date')));
+  });
+}
+
+function renderWorkbench() {
+  syncDraftFromInputs();
+  renderSummary();
+  renderCalendar();
+}
+
+async function saveRules() {
+  syncDraftFromInputs();
+  const payload = {
+    advanceCloseDays: draftRuleState.advanceCloseDays,
+    weeklyClosedDays: draftRuleState.weeklyClosedDays,
+    closedDates: draftRuleState.closedDates
+  };
+  const data = await api('/admin/products/' + encodeURIComponent(PRODUCT_ID) + '/availability-rules', {
+    method: 'PATCH',
+    body: JSON.stringify(payload)
+  });
+  savedRuleState = JSON.parse(JSON.stringify(payload));
+  print(data);
+  renderWorkbench();
+}
+
+function restoreSavedRules() {
+  draftRuleState = JSON.parse(JSON.stringify(savedRuleState));
+  syncInputsFromDraft();
+  renderWorkbench();
+}
+
+function addClosedRange() {
+  const from = document.getElementById('closeRangeFrom').value;
+  const to = document.getElementById('closeRangeTo').value;
+  if (!from || !to) throw new Error('请选择关闭区间的开始和结束日期');
+  if (to < from) throw new Error('结束日期不能早于开始日期');
+  const set = new Set(draftRuleState.closedDates);
+  let cursor = from;
+  while (cursor <= to) {
+    set.add(cursor);
+    cursor = addDays(cursor, 1);
+  }
+  draftRuleState.closedDates = Array.from(set).sort();
+  renderSelectedClosedDates();
+  renderWorkbench();
+}
+
+window.onAdminReady = async () => {
+  try {
+    workbenchProduct = await api('/admin/products/' + encodeURIComponent(PRODUCT_ID));
+    const rules = await api('/admin/products/' + encodeURIComponent(PRODUCT_ID) + '/availability-rules');
+    document.getElementById('availabilityHeadline').textContent = (workbenchProduct.data && workbenchProduct.data.name) || '未命名商品';
+    document.getElementById('availabilitySubline').textContent = 'Supplier ' + ((workbenchProduct.data && workbenchProduct.data.supplierId) || '-') + ' · External ' + ((workbenchProduct.data && workbenchProduct.data.productId) || '-') + ' · ' + PRODUCT_TIMEZONE;
+    savedRuleState = {
+      advanceCloseDays: rules.data && typeof rules.data.advanceCloseDays === 'number' ? rules.data.advanceCloseDays : 0,
+      weeklyClosedDays: rules.data && Array.isArray(rules.data.weeklyClosedDays) ? rules.data.weeklyClosedDays : [],
+      closedDates: rules.data && Array.isArray(rules.data.closedDates) ? rules.data.closedDates : []
+    };
+    draftRuleState = JSON.parse(JSON.stringify(savedRuleState));
+    syncInputsFromDraft();
+    document.getElementById('closeRangeFrom').value = todayInProductTimeZone();
+    document.getElementById('closeRangeTo').value = todayInProductTimeZone();
+    renderWorkbench();
+  } catch (error) {
+    print(String(error));
+  }
+};
+
+document.getElementById('advanceCloseDays').addEventListener('input', renderWorkbench);
+document.querySelectorAll('[data-quick-close]').forEach((button) => {
+  button.addEventListener('click', () => {
+    document.getElementById('advanceCloseDays').value = button.getAttribute('data-quick-close');
+    renderWorkbench();
+  });
+});
+document.querySelectorAll('[id^="weekday-"]').forEach((input) => input.addEventListener('change', renderWorkbench));
+document.getElementById('addClosedRange').addEventListener('click', () => {
+  try {
+    addClosedRange();
+  } catch (error) {
+    print(String(error));
+  }
+});
+document.getElementById('clearClosedDates').addEventListener('click', () => {
+  draftRuleState.closedDates = [];
+  renderSelectedClosedDates();
+  renderWorkbench();
+});
+document.getElementById('saveAvailabilityRules').addEventListener('click', () => saveRules().catch((error) => print(String(error))));
+document.getElementById('resetAvailabilityRules').addEventListener('click', restoreSavedRules);
+document.getElementById('openSettingsPage').addEventListener('click', () => {
+  window.location.href = '/products/' + encodeURIComponent(PRODUCT_ID) + '/settings';
+});
+document.getElementById('calendarPrev').addEventListener('click', () => {
+  calendarOffset -= 1;
+  renderCalendar();
+});
+document.getElementById('calendarNext').addEventListener('click', () => {
+  calendarOffset += 1;
+  renderCalendar();
+});
+document.getElementById('calendarToday').addEventListener('click', () => {
+  calendarOffset = 0;
+  renderCalendar();
+});
+
+if (getToken()) {
+  window.onAdminReady();
+}
+`);
+
+  return renderDocument(`Availability 工作台 ${safeId}`, body, script);
+}
+
 function calendarPage(id: string, timezone: string): string {
   const safeId = escapeHtml(id);
   const safeTimezone = escapeHtml(timezone);
@@ -1561,7 +2302,7 @@ function calendarPage(id: string, timezone: string): string {
     pretitle: 'Product Detail',
     title: '商品详情页',
     description: '这里先套用 Tabler 风格，核心日历、addons、推送 GYG 的现有功能先保留。',
-    actions: `<a class="btn btn-outline-primary" href="/">返回商品列表</a>`,
+    actions: `<div class="d-flex gap-2"><a class="btn btn-outline-primary" href="/products/${safeId}">Availability 工作台</a><a class="btn btn-outline-secondary" href="/">返回商品列表</a></div>`,
     content: `<div class="row row-cards">
       <div class="col-12">
         <div class="card">
@@ -2192,12 +2933,18 @@ const uiRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.get('/products/:id', async (request, reply) => {
     const id = (request.params as { id: string }).id;
     const product = await fastify.prisma.product.findUnique({ where: { id } });
+    reply.type('text/html; charset=utf-8').send(availabilityWorkbenchPage(id, product?.timezone || 'Asia/Shanghai'));
+  });
+
+  fastify.get('/products/:id/settings', async (request, reply) => {
+    const id = (request.params as { id: string }).id;
+    const product = await fastify.prisma.product.findUnique({ where: { id } });
     reply.type('text/html; charset=utf-8').send(calendarPage(id, product?.timezone || 'Asia/Shanghai'));
   });
 
   fastify.get('/products/:id/calendar', async (request, reply) => {
     const id = (request.params as { id: string }).id;
-    reply.redirect('/products/' + encodeURIComponent(id));
+    reply.redirect('/products/' + encodeURIComponent(id) + '/settings');
   });
 };
 

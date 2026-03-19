@@ -10,6 +10,7 @@ import {
   adminBookingsQuerySchema,
   adminAvailabilityDeleteParamsSchema,
   adminAccessLogsQuerySchema,
+  adminAvailabilityRulesBodySchema,
   adminProductSettingsBodySchema,
   adminProductParamsSchema,
   adminProductAddonsBodySchema,
@@ -103,6 +104,94 @@ const adminRoutes: FastifyPluginAsync = async (fastify) => {
       }
       const updated = await productService.replaceProductAddons(params.id, body.addons);
       return { data: updated };
+    }
+  );
+
+  fastify.patch(
+    '/products/:id/availability-rules',
+    {
+      schema: {
+        tags: ['Admin'],
+        security: [{ AdminToken: [] }],
+        params: adminProductParamsSchema,
+        body: adminAvailabilityRulesBodySchema
+      }
+    },
+    async (request, reply) => {
+      const params = adminProductParamsSchema.parse(request.params);
+      const body = adminAvailabilityRulesBodySchema.parse(request.body);
+      const product = await productService.getProductById(params.id);
+      if (!product) {
+        reply.code(404).send({ error: 'Product not found' });
+        return;
+      }
+
+      await fastify.prisma.$transaction(async (tx) => {
+        const data: Record<string, unknown> = {};
+        if (body.advanceCloseDays !== undefined) {
+          data.autoCloseHours = body.advanceCloseDays * 24;
+        }
+        if (body.weeklyClosedDays !== undefined) {
+          data.weeklyClosedDays = body.weeklyClosedDays;
+        }
+
+        if (Object.keys(data).length > 0) {
+          await tx.product.update({
+            where: { id: params.id },
+            data
+          });
+        }
+
+        if (body.closedDates !== undefined) {
+          await tx.productClosedDate.deleteMany({ where: { productId: params.id } });
+          if (body.closedDates.length > 0) {
+            await tx.productClosedDate.createMany({
+              data: body.closedDates.map((date) => ({
+                productId: params.id,
+                date: new Date(`${date}T00:00:00.000Z`)
+              }))
+            });
+          }
+        }
+      });
+
+      const updated = await productService.getProductById(params.id);
+      return { data: updated };
+    }
+  );
+
+  fastify.get(
+    '/products/:id/availability-rules',
+    {
+      schema: {
+        tags: ['Admin'],
+        security: [{ AdminToken: [] }],
+        params: adminProductParamsSchema
+      }
+    },
+    async (request, reply) => {
+      const params = adminProductParamsSchema.parse(request.params);
+      const product = await productService.getProductById(params.id);
+      if (!product) {
+        reply.code(404).send({ error: 'Product not found' });
+        return;
+      }
+
+      const weeklyClosedDays = Array.isArray((product as any).weeklyClosedDays)
+        ? ((product as any).weeklyClosedDays as number[])
+        : [];
+
+      return {
+        data: {
+          advanceCloseDays: Math.max(0, Math.ceil((product.autoCloseHours ?? 0) / 24)),
+          weeklyClosedDays,
+          closedDates: Array.isArray((product as any).closedDates)
+            ? (product as any).closedDates.map((row: any) =>
+                new Date(row.date).toISOString().slice(0, 10)
+              )
+            : []
+        }
+      };
     }
   );
 

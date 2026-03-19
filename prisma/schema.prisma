@@ -24,13 +24,28 @@ model Product {
   participantsMin    Int?             @default(1)
   participantsMax    Int?             @default(999)
   autoCloseHours     Int              @default(0)
+  weeklyClosedDays   Json?
   availabilities     Availability[]
+  closedDates        ProductClosedDate[]
   pricingCategories  PricingCategory[]
   addons             ProductAddon[]
   reservations       Reservation[]
   bookings           Booking[]
   createdAt          DateTime         @default(now())
   updatedAt          DateTime         @updatedAt
+}
+
+model ProductClosedDate {
+  id        String   @id @default(cuid())
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  productId String
+  date      DateTime
+  reason    String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([productId, date])
+  @@index([productId, date])
 }
 
 model Availability {

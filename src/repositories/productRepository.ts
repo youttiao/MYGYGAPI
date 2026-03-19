@@ -29,6 +29,9 @@ export class ProductRepository {
           : undefined
       },
       include: {
+        closedDates: {
+          orderBy: { date: 'asc' }
+        },
         pricingCategories: true,
         addons: true
       }
@@ -39,6 +42,9 @@ export class ProductRepository {
     return this.prisma.product.findUnique({
       where: { productId },
       include: {
+        closedDates: {
+          orderBy: { date: 'asc' }
+        },
         pricingCategories: true,
         addons: true
       }
@@ -49,6 +55,9 @@ export class ProductRepository {
     return this.prisma.product.findUnique({
       where: { id },
       include: {
+        closedDates: {
+          orderBy: { date: 'asc' }
+        },
         pricingCategories: true,
         addons: true
       }
@@ -115,6 +124,9 @@ export class ProductRepository {
         pricingMode: settings.pricingMode
       },
       include: {
+        closedDates: {
+          orderBy: { date: 'asc' }
+        },
         pricingCategories: true,
         addons: true
       }

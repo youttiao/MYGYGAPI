@@ -153,6 +153,12 @@ export const adminProductSettingsBodySchema = z
     { message: 'At least one settings field must be provided' }
   );
 
+export const adminAvailabilityRulesBodySchema = z.object({
+  advanceCloseDays: z.number().int().nonnegative().optional(),
+  weeklyClosedDays: z.array(z.number().int().min(1).max(7)).optional(),
+  closedDates: z.array(z.string().regex(/^\d{4}-\d{2}-\d{2}$/)).optional()
+});
+
 export const adminProductAddonsBodySchema = z.object({
   addons: z.array(
     z.object({

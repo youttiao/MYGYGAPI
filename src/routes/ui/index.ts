@@ -380,53 +380,76 @@ function renderDocument(title: string, body: string, script: string): string {
       margin-top: 0.4rem;
     }
 
-    .choice-group {
-      display: grid;
-      gap: 0.5rem;
+    .modal-section {
+      border: 1px solid rgba(15, 23, 42, 0.08);
+      border-radius: 1rem;
+      background: rgba(248, 250, 252, 0.72);
+      padding: 1rem;
     }
 
-    .choice-group-title {
-      font-size: 0.875rem;
-      font-weight: 600;
-      color: var(--tblr-body-color);
+    .modal-section-title {
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--tblr-secondary);
+      margin-bottom: 0.875rem;
     }
 
-    .choice-pills {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.5rem;
-    }
-
-    .choice-pill {
-      position: relative;
-    }
-
-    .choice-pill input {
-      position: absolute;
-      opacity: 0;
-      pointer-events: none;
-    }
-
-    .choice-pill span {
-      display: inline-flex;
-      align-items: center;
-      min-height: 2.5rem;
-      padding: 0.55rem 0.85rem;
-      border-radius: 999px;
-      border: 1px solid rgba(15, 23, 42, 0.12);
+    .modal-option-card {
+      border: 1px solid rgba(15, 23, 42, 0.08);
+      border-radius: 1rem;
       background: rgba(255, 255, 255, 0.8);
-      color: var(--tblr-body-color);
-      font-size: 0.875rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.16s ease;
+      padding: 0.875rem;
+      height: 100%;
     }
 
-    .choice-pill input:checked + span {
-      background: rgba(32, 107, 196, 0.12);
-      border-color: rgba(32, 107, 196, 0.42);
-      color: var(--gyg-accent);
-      box-shadow: inset 0 0 0 1px rgba(32, 107, 196, 0.08);
+    .modal-option-card .btn-group-vertical > .btn,
+    .modal-option-card .d-grid > .btn {
+      text-align: left;
+      justify-content: flex-start;
+      font-weight: 600;
+    }
+
+    .modal-form-hint {
+      margin-top: 0.35rem;
+      font-size: 0.75rem;
+      color: var(--tblr-secondary);
+    }
+
+    html[data-bs-theme='dark'] .modal-section {
+      background: rgba(15, 23, 42, 0.34);
+      border-color: rgba(148, 163, 184, 0.12);
+    }
+
+    html[data-bs-theme='dark'] .modal-option-card {
+      background: rgba(15, 23, 42, 0.58);
+      border-color: rgba(148, 163, 184, 0.14);
+    }
+
+    html[data-bs-theme='dark'] .modal-option-card .btn-outline-primary,
+    html[data-bs-theme='dark'] .modal-option-card .btn-outline-secondary {
+      color: rgba(226, 232, 240, 0.92);
+      border-color: rgba(148, 163, 184, 0.24);
+      background: rgba(15, 23, 42, 0.24);
+    }
+
+    html[data-bs-theme='dark'] .modal-option-card .btn-check:checked + .btn-outline-primary,
+    html[data-bs-theme='dark'] .modal-option-card .btn-check:checked + .btn-outline-secondary {
+      color: #dbeafe;
+      border-color: rgba(59, 130, 246, 0.52);
+      background: rgba(30, 64, 175, 0.38);
+      box-shadow: inset 0 0 0 1px rgba(96, 165, 250, 0.16);
+    }
+
+    html[data-bs-theme='dark'] #create-product-modal .modal-content {
+      background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
+      border: 1px solid rgba(148, 163, 184, 0.12);
+    }
+
+    html[data-bs-theme='dark'] #create-product-modal .modal-header,
+    html[data-bs-theme='dark'] #create-product-modal .modal-footer {
+      border-color: rgba(148, 163, 184, 0.12);
     }
 
     .stat-soft {
@@ -949,77 +972,106 @@ function productsPage(): string {
     </div>
 
     <div class="modal modal-blur fade" id="create-product-modal" tabindex="-1" aria-hidden="true">
-      <div class="modal-dialog modal-lg modal-dialog-centered">
+      <div class="modal-dialog modal-xl modal-dialog-centered">
           <div class="modal-content">
           <div class="modal-header">
-            <h3 class="modal-title">创建商品 Create Product</h3>
+            <div>
+              <h3 class="modal-title mb-1">创建商品 Create Product</h3>
+              <div class="text-secondary small">基础信息 + 销售模型。创建后可在详情页继续维护规则与 availability。</div>
+            </div>
             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
           </div>
           <form id="create-product-form">
             <div class="modal-body">
-              <div class="row g-3">
-                <div class="col-md-6">
-                  <label class="form-label">supplierId</label>
-                  <input id="supplierId" class="form-control" value="supplier123" required />
+              <div class="modal-section mb-3">
+                <div class="modal-section-title">基础标识</div>
+                <div class="row g-3">
+                  <div class="col-md-6">
+                    <label class="form-label">supplierId</label>
+                    <input id="supplierId" class="form-control" value="supplier123" required />
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label">productId</label>
+                    <input id="productId" class="form-control" value="prod-web-001" required />
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label">名称 Name</label>
+                    <input id="name" class="form-control" value="Web Product" required />
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label">状态 Status</label>
+                    <select id="status" class="form-select">
+                      <option value="active">active</option>
+                      <option value="inactive">inactive</option>
+                    </select>
+                  </div>
                 </div>
-                <div class="col-md-6">
-                  <label class="form-label">productId</label>
-                  <input id="productId" class="form-control" value="prod-web-001" required />
-                </div>
-                <div class="col-md-6">
-                  <label class="form-label">名称 Name</label>
-                  <input id="name" class="form-control" value="Web Product" required />
-                </div>
-                <div class="col-md-6">
-                  <label class="form-label">时区 Timezone</label>
-                  <input id="timezone" class="form-control" value="Asia/Shanghai" required />
-                </div>
-                <div class="col-md-4">
-                  <label class="form-label">币种 Currency</label>
-                  <input id="currency" class="form-control" value="CNY" required />
-                </div>
-                <div class="col-md-4">
-                  <div class="choice-group">
-                    <div class="choice-group-title">可用性类型 Availability</div>
-                    <div class="choice-pills">
-                      <label class="choice-pill"><input type="radio" name="availabilityType" value="TIME_POINT" checked /><span>time point</span></label>
-                      <label class="choice-pill"><input type="radio" name="availabilityType" value="TIME_PERIOD" /><span>time period</span></label>
+              </div>
+
+              <div class="modal-section mb-3">
+                <div class="modal-section-title">销售模型</div>
+                <div class="row row-cards g-3">
+                  <div class="col-md-4">
+                    <div class="modal-option-card">
+                      <label class="form-label">可用性类型 Availability</label>
+                      <div class="btn-group-vertical w-100" role="group" aria-label="Availability type">
+                        <input type="radio" class="btn-check" name="availabilityType" id="availabilityTypeTimePoint" value="TIME_POINT" checked />
+                        <label class="btn btn-outline-primary" for="availabilityTypeTimePoint">time point</label>
+                        <input type="radio" class="btn-check" name="availabilityType" id="availabilityTypeTimePeriod" value="TIME_PERIOD" />
+                        <label class="btn btn-outline-primary" for="availabilityTypeTimePeriod">time period</label>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="col-md-4">
+                    <div class="modal-option-card">
+                      <label class="form-label">产品类型 Product Type</label>
+                      <div class="btn-group-vertical w-100" role="group" aria-label="Product type">
+                        <input type="radio" class="btn-check" name="productType" id="productTypeIndividual" value="INDIVIDUAL" checked />
+                        <label class="btn btn-outline-primary" for="productTypeIndividual">individual</label>
+                        <input type="radio" class="btn-check" name="productType" id="productTypeGroup" value="GROUP" />
+                        <label class="btn btn-outline-primary" for="productTypeGroup">group</label>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="col-md-4">
+                    <div class="modal-option-card">
+                      <label class="form-label">定价模式 Pricing</label>
+                      <div class="btn-group-vertical w-100" role="group" aria-label="Pricing mode">
+                        <input type="radio" class="btn-check" name="pricingMode" id="pricingModeManual" value="MANUAL_IN_GYG" checked />
+                        <label class="btn btn-outline-primary" for="pricingModeManual">MANUAL_IN_GYG</label>
+                        <input type="radio" class="btn-check" name="pricingMode" id="pricingModeApi" value="PRICE_OVER_API" />
+                        <label class="btn btn-outline-primary" for="pricingModeApi">PRICE_OVER_API</label>
+                      </div>
                     </div>
                   </div>
                 </div>
-                <div class="col-md-4">
-                  <div class="choice-group">
-                    <div class="choice-group-title">产品类型 Product Type</div>
-                    <div class="choice-pills">
-                      <label class="choice-pill"><input type="radio" name="productType" value="INDIVIDUAL" checked /><span>individual</span></label>
-                      <label class="choice-pill"><input type="radio" name="productType" value="GROUP" /><span>group</span></label>
-                    </div>
+              </div>
+
+              <div class="modal-section mb-3">
+                <div class="modal-section-title">运营信息</div>
+                <div class="row g-3">
+                  <div class="col-md-6">
+                    <label class="form-label">时区 Timezone</label>
+                    <input id="timezone" class="form-control" value="Asia/Shanghai" required />
+                    <div class="modal-form-hint">后续适合迁移到 Supplier 级设置，避免每次新建商品重复填写。</div>
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label">币种 Currency</label>
+                    <input id="currency" class="form-control" value="CNY" required />
+                    <div class="modal-form-hint">建议和 supplier 的默认售卖币种统一管理。</div>
                   </div>
                 </div>
-                <div class="col-md-4">
-                  <div class="choice-group">
-                    <div class="choice-group-title">定价模式 Pricing</div>
-                    <div class="choice-pills">
-                      <label class="choice-pill"><input type="radio" name="pricingMode" value="MANUAL_IN_GYG" checked /><span>MANUAL_IN_GYG</span></label>
-                      <label class="choice-pill"><input type="radio" name="pricingMode" value="PRICE_OVER_API" /><span>PRICE_OVER_API</span></label>
-                    </div>
-                  </div>
-                </div>
-                <div class="col-md-4">
-                  <label class="form-label">状态 Status</label>
-                  <select id="status" class="form-select">
-                    <option value="active">active</option>
-                    <option value="inactive">inactive</option>
-                  </select>
-                </div>
-                <div class="col-12">
-                  <label class="form-label">描述 Description</label>
-                  <textarea id="description" class="form-control" rows="4">Created from Tabler UI</textarea>
-                </div>
+              </div>
+
+              <div class="modal-section">
+                <div class="modal-section-title">描述</div>
+                <label class="form-label">Description</label>
+                <textarea id="description" class="form-control" rows="3">Created from Tabler UI</textarea>
               </div>
             </div>
             <div class="modal-footer">
-              <button class="btn btn-link link-secondary" type="button" data-bs-dismiss="modal">取消</button>
+              <div class="me-auto text-secondary small">创建完成后可直接进入新的 Availability 工作台继续维护销售规则。</div>
+              <button class="btn btn-outline-secondary" type="button" data-bs-dismiss="modal">取消</button>
               <button class="btn btn-primary ms-auto" type="submit">创建商品</button>
             </div>
           </form>

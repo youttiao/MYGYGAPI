@@ -15,6 +15,8 @@ export class ProductService {
     description: string;
     timezone: string;
     currency: string;
+    availabilityType?: 'TIME_POINT' | 'TIME_PERIOD';
+    productType?: 'INDIVIDUAL' | 'GROUP';
     pricingMode?: 'MANUAL_IN_GYG' | 'PRICE_OVER_API';
     status: 'active' | 'inactive';
     destinationCity: string;
@@ -48,6 +50,8 @@ export class ProductService {
         description: input.description,
         timezone: input.timezone,
         currency: input.currency,
+        availabilityType: input.availabilityType ?? 'TIME_POINT',
+        productType: input.productType ?? 'INDIVIDUAL',
         pricingMode: input.pricingMode ?? 'MANUAL_IN_GYG',
         status: input.status,
         destinationCity: input.destinationCity,

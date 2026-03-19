@@ -7,6 +7,8 @@ export const createProductBodySchema = z.object({
   description: z.string().min(1),
   timezone: z.string().min(1),
   currency: z.string().length(3),
+  availabilityType: z.enum(['TIME_POINT', 'TIME_PERIOD']).default('TIME_POINT'),
+  productType: z.enum(['INDIVIDUAL', 'GROUP']).default('INDIVIDUAL'),
   pricingMode: z.enum(['MANUAL_IN_GYG', 'PRICE_OVER_API']).default('MANUAL_IN_GYG'),
   status: z.enum(['active', 'inactive']).default('active'),
   destinationCity: z.string().default('Berlin'),

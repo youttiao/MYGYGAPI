@@ -358,6 +358,28 @@ function renderDocument(title: string, body: string, script: string): string {
       min-width: 140px;
     }
 
+    .app-main-container {
+      width: min(100%, 1680px);
+      max-width: calc(100vw - 2rem);
+    }
+
+    .product-link {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    .product-link:hover {
+      color: var(--gyg-accent);
+      text-decoration: underline;
+    }
+
+    .product-attr-badges {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.375rem;
+      margin-top: 0.4rem;
+    }
+
     .stat-soft {
       border-radius: 1rem;
       background: #f6f8fc;
@@ -557,7 +579,7 @@ function renderAppShell(options: {
 
     <div class="page-wrapper">
       <div class="page-body">
-        <div class="container-xl py-4 py-lg-5">
+        <div class="container-xl app-main-container py-4 py-lg-5">
           <div class="page-header-card mb-4">
             <div class="row align-items-center g-3">
               <div class="col">
@@ -908,6 +930,20 @@ function productsPage(): string {
                   <input id="currency" class="form-control" value="CNY" required />
                 </div>
                 <div class="col-md-4">
+                  <label class="form-label">可用性类型 Availability</label>
+                  <select id="availabilityType" class="form-select">
+                    <option value="TIME_POINT">time point</option>
+                    <option value="TIME_PERIOD">time period</option>
+                  </select>
+                </div>
+                <div class="col-md-4">
+                  <label class="form-label">产品类型 Product Type</label>
+                  <select id="productType" class="form-select">
+                    <option value="INDIVIDUAL">individual</option>
+                    <option value="GROUP">group</option>
+                  </select>
+                </div>
+                <div class="col-md-4">
                   <label class="form-label">定价模式 Pricing</label>
                   <select id="pricingMode" class="form-select">
                     <option value="MANUAL_IN_GYG">MANUAL_IN_GYG</option>
@@ -1006,13 +1042,13 @@ function renderProductsTable() {
       row.innerHTML =
         '<td><input class="form-check-input m-0 align-middle table-selectable-check" type="checkbox" aria-label="Select product"></td>' +
         '<td><span class="text-secondary">' + esc(String(startIndex + index + 1).padStart(3, '0')) + '</span></td>' +
-        '<td><div class="fw-semibold">' + esc(product.name || '-') + '</div><div class="text-secondary small">' + esc(product.id || '-') + '</div></td>' +
+        '<td><div class="fw-semibold"><a class="product-link" href="/products/' + encodeURIComponent(product.id) + '">' + esc(product.name || '-') + '</a></div><div class="text-secondary small">' + esc(product.id || '-') + '</div><div class="product-attr-badges"><span class="badge bg-azure-lt text-azure">' + esc(String(product.availabilityType || 'TIME_POINT').toLowerCase().replace('_', ' ')) + '</span><span class="badge bg-lime-lt text-lime">' + esc(String(product.productType || 'INDIVIDUAL').toLowerCase()) + '</span></div></td>' +
         '<td>' + esc(product.supplierId || '-') + '</td>' +
         '<td>' + esc(product.productId || '-') + '</td>' +
         '<td>' + statusBadge(product.status) + '</td>' +
         '<td>' + esc(product.currency || '-') + '</td>' +
         '<td>' + esc(product.timezone || '-') + '</td>' +
-        '<td class="text-end"><div class="dropdown"><button class="btn dropdown-toggle align-text-top" data-bs-toggle="dropdown" type="button">Actions</button><div class="dropdown-menu dropdown-menu-end"><a class="dropdown-item" href="/products/' + encodeURIComponent(product.id) + '/calendar">商品详情</a></div></div></td>';
+        '<td class="text-end"><div class="dropdown"><button class="btn dropdown-toggle align-text-top" data-bs-toggle="dropdown" type="button">Actions</button><div class="dropdown-menu dropdown-menu-end"><a class="dropdown-item" href="/products/' + encodeURIComponent(product.id) + '">商品详情</a></div></div></td>';
       productsTableBody.appendChild(row);
     });
   }
@@ -1102,6 +1138,8 @@ document.getElementById('create-product-form').addEventListener('submit', async 
       description: document.getElementById('description').value.trim(),
       timezone: document.getElementById('timezone').value.trim(),
       currency: document.getElementById('currency').value.trim(),
+      availabilityType: document.getElementById('availabilityType').value,
+      productType: document.getElementById('productType').value,
       pricingMode: document.getElementById('pricingMode').value,
       status: document.getElementById('status').value,
       destinationCity: 'Shanghai',
@@ -1112,7 +1150,13 @@ document.getElementById('create-product-form').addEventListener('submit', async 
       body: JSON.stringify(payload)
     });
     print(data);
-    window.bootstrap.Modal.getInstance(document.getElementById('create-product-modal')).hide();
+    const modalElement = document.getElementById('create-product-modal');
+    window.bootstrap.Modal.getOrCreateInstance(modalElement).hide();
+    event.target.reset();
+    document.getElementById('status').value = 'active';
+    document.getElementById('availabilityType').value = 'TIME_POINT';
+    document.getElementById('productType').value = 'INDIVIDUAL';
+    document.getElementById('pricingMode').value = 'MANUAL_IN_GYG';
     await loadProducts();
   } catch (error) {
     print(String(error));
@@ -1368,6 +1412,18 @@ function calendarPage(id: string, timezone: string): string {
                   <div class="fw-semibold">${safeTimezone}</div>
                 </div>
               </div>
+              <div class="col-md-4">
+                <div class="stat-soft">
+                  <div class="text-secondary small">Availability Type</div>
+                  <div id="productAvailabilityType" class="fw-semibold">loading...</div>
+                </div>
+              </div>
+              <div class="col-md-4">
+                <div class="stat-soft">
+                  <div class="text-secondary small">Product Type</div>
+                  <div id="productTypeLabel" class="fw-semibold">loading...</div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -1440,10 +1496,7 @@ function calendarPage(id: string, timezone: string): string {
             <div class="row g-3">
               <div class="col-md-4">
                 <label class="form-label">可用性类型</label>
-                <select id="availabilityMode" class="form-select">
-                  <option value="time_point">time point</option>
-                  <option value="time_period">time period</option>
-                </select>
+                <input id="availabilityModeLabel" class="form-control" readonly />
               </div>
               <div class="col-md-4">
                 <label class="form-label">开始日期</label>
@@ -1566,6 +1619,8 @@ const PRODUCT_ID = ${JSON.stringify(id)};
 const PRODUCT_TIMEZONE = ${JSON.stringify(timezone)};
 const tableBody = document.getElementById('tableBody');
 let currentProductCurrency = 'CNY';
+let currentAvailabilityType = 'TIME_POINT';
+let currentProductType = 'INDIVIDUAL';
 
 function print(value) {
   appendLog(value);
@@ -1636,9 +1691,9 @@ function openingTimesText(row) {
 }
 
 function updateAvailabilityModeUI() {
-  const mode = document.getElementById('availabilityMode').value;
-  document.getElementById('timePointBlock').style.display = mode === 'time_point' ? 'block' : 'none';
-  document.getElementById('timePeriodBlock').style.display = mode === 'time_period' ? 'block' : 'none';
+  const isTimePoint = currentAvailabilityType === 'TIME_POINT';
+  document.getElementById('timePointBlock').style.display = isTimePoint ? 'block' : 'none';
+  document.getElementById('timePeriodBlock').style.display = isTimePoint ? 'none' : 'block';
 }
 
 function render(rows) {
@@ -1682,7 +1737,7 @@ function listDates(from, to) {
 }
 
 async function saveRange() {
-  const mode = document.getElementById('availabilityMode').value;
+  const mode = currentAvailabilityType === 'TIME_PERIOD' ? 'time_period' : 'time_point';
   const from = document.getElementById('saveFromDate').value;
   const to = document.getElementById('saveToDate').value;
   const tz = document.getElementById('tz').value.trim() || '+08:00';
@@ -1702,7 +1757,8 @@ async function saveRange() {
 
   const hasGroupPrice = retailPrices.some((item) => item.category === 'GROUP');
   const individualCategories = retailPrices.filter((item) => item.category !== 'GROUP').map((item) => item.category);
-  const vacanciesByCategory = individualCategories.length ? individualCategories.map((category) => ({ category, vacancies })) : undefined;
+  const useGroupModel = currentProductType === 'GROUP';
+  const vacanciesByCategory = !useGroupModel && individualCategories.length ? individualCategories.map((category) => ({ category, vacancies })) : undefined;
   const currency = document.getElementById('currency').value.trim().toUpperCase();
   const all = [];
   const dates = listDates(from, to);
@@ -1722,7 +1778,7 @@ async function saveRange() {
         dateTime: toIso(date, '00:00', tz),
         openingTimes,
         cutoffSeconds,
-        vacancies: hasGroupPrice && !vacanciesByCategory ? vacancies : undefined,
+        vacancies: useGroupModel || (hasGroupPrice && !vacanciesByCategory) ? vacancies : undefined,
         vacanciesByCategory,
         currency,
         pricesByCategory: { retailPrices }
@@ -1739,7 +1795,7 @@ async function saveRange() {
         all.push({
           dateTime: toIso(date, time, tz),
           cutoffSeconds,
-          vacancies: hasGroupPrice && !vacanciesByCategory ? vacancies : undefined,
+          vacancies: useGroupModel || (hasGroupPrice && !vacanciesByCategory) ? vacancies : undefined,
           vacanciesByCategory,
           currency,
           pricesByCategory: { retailPrices }
@@ -1826,7 +1882,6 @@ document.getElementById('quick30').addEventListener('click', () => {
   document.getElementById('toDate').value = addDays(today(), 29);
 });
 
-document.getElementById('availabilityMode').addEventListener('change', updateAvailabilityModeUI);
 document.getElementById('load').addEventListener('click', () => loadCalendar().catch((error) => print(String(error))));
 document.getElementById('saveRange').addEventListener('click', () => saveRange().catch((error) => print(String(error))));
 
@@ -1913,10 +1968,14 @@ window.onAdminReady = async () => {
     document.getElementById('toDate').value = addDays(today(), 29);
     document.getElementById('saveFromDate').value = today();
     document.getElementById('saveToDate').value = today();
-    updateAvailabilityModeUI();
     const product = await api('/admin/products/' + encodeURIComponent(PRODUCT_ID));
     document.getElementById('externalProductId').textContent = product.data && product.data.productId ? product.data.productId : 'N/A';
     currentProductCurrency = product.data && product.data.currency ? String(product.data.currency).toUpperCase() : 'CNY';
+    currentAvailabilityType = product.data && product.data.availabilityType ? String(product.data.availabilityType).toUpperCase() : 'TIME_POINT';
+    currentProductType = product.data && product.data.productType ? String(product.data.productType).toUpperCase() : 'INDIVIDUAL';
+    document.getElementById('productAvailabilityType').textContent = currentAvailabilityType.toLowerCase().replace('_', ' ');
+    document.getElementById('productTypeLabel').textContent = currentProductType.toLowerCase();
+    document.getElementById('availabilityModeLabel').value = currentAvailabilityType.toLowerCase().replace('_', ' ');
     document.getElementById('addonsCurrency').textContent = currentProductCurrency;
     document.getElementById('autoCloseHours').value = String(product.data && product.data.autoCloseHours != null ? product.data.autoCloseHours : 0);
     document.getElementById('participantsMin').value = String(product.data && product.data.participantsMin != null ? product.data.participantsMin : 1);
@@ -1929,6 +1988,7 @@ window.onAdminReady = async () => {
       document.getElementById('groupSizeMax').value = String(groupCfg.groupSizeMax);
     }
     renderAddonsRows(product.data && product.data.addons ? product.data.addons : []);
+    updateAvailabilityModeUI();
     await loadCalendar();
   } catch (error) {
     print(String(error));
@@ -1956,10 +2016,15 @@ const uiRoutes: FastifyPluginAsync = async (fastify) => {
     reply.type('text/html; charset=utf-8').send(logsPage());
   });
 
-  fastify.get('/products/:id/calendar', async (request, reply) => {
+  fastify.get('/products/:id', async (request, reply) => {
     const id = (request.params as { id: string }).id;
     const product = await fastify.prisma.product.findUnique({ where: { id } });
     reply.type('text/html; charset=utf-8').send(calendarPage(id, product?.timezone || 'Asia/Shanghai'));
+  });
+
+  fastify.get('/products/:id/calendar', async (request, reply) => {
+    const id = (request.params as { id: string }).id;
+    reply.redirect('/products/' + encodeURIComponent(id));
   });
 };
 

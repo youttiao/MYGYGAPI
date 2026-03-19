@@ -15,6 +15,8 @@ model Product {
   description        String
   timezone           String
   currency           String
+  availabilityType   String           @default("TIME_POINT")
+  productType        String           @default("INDIVIDUAL")
   pricingMode        String           @default("MANUAL_IN_GYG")
   status             String           @default("active")
   destinationCity    String           @default("Unknown")

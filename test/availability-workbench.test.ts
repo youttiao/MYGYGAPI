@@ -1,8 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import {
+  applyDateOverrideMode,
   formatClosedDateRange,
   hasBootstrapModalApi,
   getDayOverrideAction,
+  getDateOverrideMode,
+  getNextDateOverrideMode,
   getVisibleCalendarOffsets,
   getCalendarRuleState,
   groupClosedDatesIntoRanges,
@@ -14,18 +17,21 @@ describe('availability workbench helpers', () => {
     const savedRuleState: AvailabilityRuleState = {
       advanceCloseDays: 3,
       weeklyClosedDays: [2, 4],
-      closedDates: ['2026-03-28']
+      closedDates: ['2026-03-28'],
+      openedDates: ['2026-03-30']
     };
     const draftRuleState: AvailabilityRuleState = {
       advanceCloseDays: 14,
       weeklyClosedDays: [1, 3, 5],
-      closedDates: ['2026-03-28', '2026-03-29']
+      closedDates: ['2026-03-28', '2026-03-29'],
+      openedDates: ['2026-03-30', '2026-03-31']
     };
 
     expect(getCalendarRuleState(savedRuleState, draftRuleState)).toEqual({
       advanceCloseDays: 3,
       weeklyClosedDays: [2, 4],
-      closedDates: ['2026-03-28', '2026-03-29']
+      closedDates: ['2026-03-28', '2026-03-29'],
+      openedDates: ['2026-03-30', '2026-03-31']
     });
   });
 
@@ -48,15 +54,21 @@ describe('availability workbench helpers', () => {
   });
 
   it('uses one primary day action in the detail modal based on manual override state', () => {
-    expect(getDayOverrideAction('2026-03-27', ['2026-03-27'])).toEqual({
+    expect(getDayOverrideAction('manual-closed')).toEqual({
       action: 'open',
-      label: '打开当天日历',
+      label: '打开当天',
       buttonClassName: 'btn btn-primary'
     });
 
-    expect(getDayOverrideAction('2026-03-27', ['2026-03-28'])).toEqual({
+    expect(getDayOverrideAction('manual-open')).toEqual({
+      action: 'follow-rules',
+      label: '遵循规律',
+      buttonClassName: 'btn btn-secondary'
+    });
+
+    expect(getDayOverrideAction('follow-rules')).toEqual({
       action: 'close',
-      label: '关闭当天日历',
+      label: '关闭当天',
       buttonClassName: 'btn btn-danger'
     });
   });
@@ -66,5 +78,55 @@ describe('availability workbench helpers', () => {
     expect(hasBootstrapModalApi({})).toBe(false);
     expect(hasBootstrapModalApi({ Modal: {} })).toBe(false);
     expect(hasBootstrapModalApi({ Modal: { getOrCreateInstance: () => ({}) } })).toBe(true);
+  });
+
+  it('tracks per-day manual override mode separately from automatic rules', () => {
+    expect(getDateOverrideMode('2026-03-20', ['2026-03-20'], [])).toBe('manual-closed');
+    expect(getDateOverrideMode('2026-03-20', [], ['2026-03-20'])).toBe('manual-open');
+    expect(getDateOverrideMode('2026-03-20', [], [])).toBe('follow-rules');
+  });
+
+  it('cycles quick-toggle mode through closed, follow-rules, and open', () => {
+    expect(getNextDateOverrideMode('manual-closed')).toBe('follow-rules');
+    expect(getNextDateOverrideMode('follow-rules')).toBe('manual-open');
+    expect(getNextDateOverrideMode('manual-open')).toBe('manual-closed');
+  });
+
+  it('applies a single-date override mode without mutating other dates', () => {
+    expect(
+      applyDateOverrideMode(
+        '2026-03-20',
+        {
+          advanceCloseDays: 0,
+          weeklyClosedDays: [],
+          closedDates: ['2026-03-21'],
+          openedDates: ['2026-03-22']
+        },
+        'manual-open'
+      )
+    ).toEqual({
+      advanceCloseDays: 0,
+      weeklyClosedDays: [],
+      closedDates: ['2026-03-21'],
+      openedDates: ['2026-03-20', '2026-03-22']
+    });
+
+    expect(
+      applyDateOverrideMode(
+        '2026-03-22',
+        {
+          advanceCloseDays: 0,
+          weeklyClosedDays: [],
+          closedDates: ['2026-03-21'],
+          openedDates: ['2026-03-22']
+        },
+        'follow-rules'
+      )
+    ).toEqual({
+      advanceCloseDays: 0,
+      weeklyClosedDays: [],
+      closedDates: ['2026-03-21'],
+      openedDates: []
+    });
   });
 });

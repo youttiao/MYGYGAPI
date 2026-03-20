@@ -20,7 +20,9 @@ import {
 } from '../../schemas/admin.js';
 
 const adminRoutes: FastifyPluginAsync = async (fastify) => {
-  const productService = new ProductService(fastify.prisma);
+const productService = new ProductService(fastify.prisma);
+const MANUAL_CLOSE_REASON = 'manual-close';
+const MANUAL_OPEN_REASON = 'manual-open';
   const availabilityService = new AvailabilityService(fastify.prisma);
   const bookingService = new BookingService(fastify.prisma);
   const gygOutboundService = new GygOutboundService();
@@ -143,12 +145,36 @@ const adminRoutes: FastifyPluginAsync = async (fastify) => {
         }
 
         if (body.closedDates !== undefined) {
-          await tx.productClosedDate.deleteMany({ where: { productId: params.id } });
+          await tx.productClosedDate.deleteMany({
+            where: {
+              productId: params.id,
+              OR: [{ reason: null }, { reason: MANUAL_CLOSE_REASON }]
+            }
+          });
           if (body.closedDates.length > 0) {
             await tx.productClosedDate.createMany({
               data: body.closedDates.map((date) => ({
                 productId: params.id,
-                date: new Date(`${date}T00:00:00.000Z`)
+                date: new Date(`${date}T00:00:00.000Z`),
+                reason: MANUAL_CLOSE_REASON
+              }))
+            });
+          }
+        }
+
+        if (body.openedDates !== undefined) {
+          await tx.productClosedDate.deleteMany({
+            where: {
+              productId: params.id,
+              reason: MANUAL_OPEN_REASON
+            }
+          });
+          if (body.openedDates.length > 0) {
+            await tx.productClosedDate.createMany({
+              data: body.openedDates.map((date) => ({
+                productId: params.id,
+                date: new Date(`${date}T00:00:00.000Z`),
+                reason: MANUAL_OPEN_REASON
               }))
             });
           }
@@ -186,9 +212,18 @@ const adminRoutes: FastifyPluginAsync = async (fastify) => {
           advanceCloseDays: Math.max(0, Math.ceil((product.autoCloseHours ?? 0) / 24)),
           weeklyClosedDays,
           closedDates: Array.isArray((product as any).closedDates)
-            ? (product as any).closedDates.map((row: any) =>
+            ? (product as any).closedDates
+                .filter((row: any) => row.reason !== MANUAL_OPEN_REASON)
+                .map((row: any) =>
+                  new Date(row.date).toISOString().slice(0, 10)
+                )
+            : [],
+          openedDates: Array.isArray((product as any).closedDates)
+            ? (product as any).closedDates
+                .filter((row: any) => row.reason === MANUAL_OPEN_REASON)
+                .map((row: any) =>
                 new Date(row.date).toISOString().slice(0, 10)
-              )
+                )
             : []
         }
       };

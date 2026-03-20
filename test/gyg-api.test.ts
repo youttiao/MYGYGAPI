@@ -283,4 +283,61 @@ describe('GYG OPS minimal system', () => {
     expect(res.statusCode).toBe(401);
     expect(res.json().errorCode).toBe('AUTHORIZATION_FAILURE');
   });
+
+  it('admin availability rules 支持单日打开覆盖并按原因拆分返回', async () => {
+    await prisma.productClosedDate.createMany({
+      data: [
+        {
+          productId: productInternalId,
+          date: new Date('2030-01-02T00:00:00.000Z'),
+          reason: 'manual-close'
+        },
+        {
+          productId: productInternalId,
+          date: new Date('2030-01-03T00:00:00.000Z'),
+          reason: 'manual-open'
+        }
+      ]
+    });
+
+    const getRes = await app.inject({
+      method: 'GET',
+      url: '/admin/products/' + productInternalId + '/availability-rules',
+      headers: { 'x-admin-token': 'admin_dev_token' }
+    });
+
+    expect(getRes.statusCode).toBe(200);
+    expect(getRes.json().data).toMatchObject({
+      closedDates: ['2030-01-02'],
+      openedDates: ['2030-01-03']
+    });
+
+    const patchRes = await app.inject({
+      method: 'PATCH',
+      url: '/admin/products/' + productInternalId + '/availability-rules',
+      headers: {
+        'x-admin-token': 'admin_dev_token',
+        'content-type': 'application/json'
+      },
+      payload: {
+        openedDates: ['2030-01-05'],
+        closedDates: ['2030-01-06']
+      }
+    });
+
+    expect(patchRes.statusCode).toBe(200);
+
+    const rows = await prisma.productClosedDate.findMany({
+      where: { productId: productInternalId },
+      orderBy: { date: 'asc' }
+    });
+
+    expect(rows.map((row) => ({
+      date: row.date.toISOString().slice(0, 10),
+      reason: row.reason
+    }))).toEqual([
+      { date: '2030-01-05', reason: 'manual-open' },
+      { date: '2030-01-06', reason: 'manual-close' }
+    ]);
+  });
 });

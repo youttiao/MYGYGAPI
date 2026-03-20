@@ -1,8 +1,11 @@
 import type { FastifyPluginAsync } from 'fastify';
 import {
+  applyDateOverrideMode,
   formatClosedDateRange,
   hasBootstrapModalApi,
   getDayOverrideAction,
+  getDateOverrideMode,
+  getNextDateOverrideMode,
   getVisibleCalendarOffsets,
   getCalendarRuleState,
   groupClosedDatesIntoRanges
@@ -576,6 +579,12 @@ function renderDocument(title: string, body: string, script: string): string {
       background: linear-gradient(180deg, rgba(220, 252, 231, 0.95), rgba(240, 253, 244, 0.88));
     }
 
+    .day-cell.is-manual-open {
+      border-color: rgba(22, 163, 74, 0.4);
+      background: linear-gradient(180deg, rgba(187, 247, 208, 0.98), rgba(220, 252, 231, 0.92));
+      box-shadow: inset 0 0 0 1px rgba(22, 163, 74, 0.18);
+    }
+
     .day-cell.is-manual-closed {
       border-color: rgba(239, 68, 68, 0.3);
       background: linear-gradient(180deg, rgba(254, 226, 226, 0.98), rgba(254, 242, 242, 0.92));
@@ -646,6 +655,15 @@ function renderDocument(title: string, body: string, script: string): string {
       margin-bottom: 1rem;
     }
 
+    .calendar-controls {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+      margin-bottom: 1rem;
+    }
+
     .calendar-legend .badge {
       font-size: 0.8rem;
       padding: 0.45rem 0.65rem;
@@ -664,6 +682,12 @@ function renderDocument(title: string, body: string, script: string): string {
     html[data-bs-theme='dark'] .day-cell.is-open {
       background: linear-gradient(180deg, rgba(20, 83, 45, 0.82), rgba(5, 46, 22, 0.72));
       border-color: rgba(74, 222, 128, 0.24);
+    }
+
+    html[data-bs-theme='dark'] .day-cell.is-manual-open {
+      background: linear-gradient(180deg, rgba(22, 101, 52, 0.88), rgba(5, 46, 22, 0.78));
+      border-color: rgba(134, 239, 172, 0.4);
+      box-shadow: inset 0 0 0 1px rgba(134, 239, 172, 0.28);
     }
 
     html[data-bs-theme='dark'] .day-cell.is-manual-closed {
@@ -699,6 +723,10 @@ function renderDocument(title: string, body: string, script: string): string {
       .weekdays-row,
       .days-grid {
         gap: 0.35rem;
+      }
+
+      .calendar-controls {
+        align-items: stretch;
       }
 
       .day-cell {
@@ -1969,12 +1997,23 @@ function availabilityWorkbenchPage(id: string, timezone: string): string {
             </div>
           </div>
           <div class="card-body">
-            <div class="calendar-legend">
-              <span class="badge bg-green-lt text-green">🟢 可售</span>
-              <span class="badge bg-red-lt text-red">🔴 手动关闭</span>
-              <span class="badge bg-orange-lt text-orange">⏳ 提前停售</span>
-              <span class="badge bg-azure-lt text-azure">🔁 周规则关闭</span>
-              <span class="badge bg-secondary-lt text-secondary">📍 今天</span>
+            <div class="calendar-controls">
+              <div class="calendar-legend mb-0">
+                <span class="badge bg-green-lt text-green">🟢 可售</span>
+                <span class="badge bg-red-lt text-red">🔴 手动关闭</span>
+                <span class="badge bg-green-lt text-green">✅ 手动打开</span>
+                <span class="badge bg-orange-lt text-orange">⏳ 提前停售</span>
+                <span class="badge bg-azure-lt text-azure">🔁 周规则关闭</span>
+                <span class="badge bg-secondary-lt text-secondary">📍 今天</span>
+              </div>
+              <label class="row g-2 align-items-center m-0">
+                <span class="col">快速开关日历模式</span>
+                <span class="col-auto">
+                  <label class="form-check form-check-single form-switch mb-0">
+                    <input id="quickToggleCalendarMode" class="form-check-input" type="checkbox" />
+                  </label>
+                </span>
+              </label>
             </div>
             <div id="calendarShell" class="calendar-shell"></div>
           </div>
@@ -2001,9 +2040,12 @@ function availabilityWorkbenchPage(id: string, timezone: string): string {
   });
 
 const script = sharedScript(`
+const applyDateOverrideMode = ${applyDateOverrideMode.toString()};
 const getCalendarRuleState = ${getCalendarRuleState.toString()};
 const groupClosedDatesIntoRanges = ${groupClosedDatesIntoRanges.toString()};
 const formatClosedDateRange = ${formatClosedDateRange.toString()};
+const getDateOverrideMode = ${getDateOverrideMode.toString()};
+const getNextDateOverrideMode = ${getNextDateOverrideMode.toString()};
 const getVisibleCalendarOffsets = ${getVisibleCalendarOffsets.toString()};
 const getDayOverrideAction = ${getDayOverrideAction.toString()};
 const hasBootstrapModalApi = ${hasBootstrapModalApi.toString()};
@@ -2014,15 +2056,18 @@ let workbenchProduct = null;
 let savedRuleState = {
   advanceCloseDays: 0,
   weeklyClosedDays: [],
-  closedDates: []
+  closedDates: [],
+  openedDates: []
 };
 let draftRuleState = {
   advanceCloseDays: 0,
   weeklyClosedDays: [],
-  closedDates: []
+  closedDates: [],
+  openedDates: []
 };
 let calendarOffset = 0;
 let manualDayDetailBackdrop = null;
+let quickToggleCalendarMode = false;
 
 function print(value) {
   appendLog(value);
@@ -2119,8 +2164,8 @@ function syncDraftFromInputs() {
 function renderSelectedClosedDates() {
   const container = document.getElementById('selectedClosedDates');
   container.innerHTML = '';
-  if (!draftRuleState.closedDates.length) {
-    container.innerHTML = '<span class="text-secondary small">当前没有手动关闭日期</span>';
+  if (!draftRuleState.closedDates.length && !draftRuleState.openedDates.length) {
+    container.innerHTML = '<span class="text-secondary small">当前没有单日手动覆盖</span>';
     return;
   }
   groupClosedDatesIntoRanges(draftRuleState.closedDates).forEach((range) => {
@@ -2131,6 +2176,19 @@ function renderSelectedClosedDates() {
     badge.addEventListener('click', () => {
       const rangeDates = new Set(range.dates);
       draftRuleState.closedDates = draftRuleState.closedDates.filter((item) => !rangeDates.has(item));
+      renderSelectedClosedDates();
+      renderWorkbench();
+    });
+    container.appendChild(badge);
+  });
+  groupClosedDatesIntoRanges(draftRuleState.openedDates).forEach((range) => {
+    const badge = document.createElement('button');
+    badge.type = 'button';
+    badge.className = 'btn btn-sm btn-outline-success';
+    badge.textContent = '🟢 ' + formatClosedDateRange(range);
+    badge.addEventListener('click', () => {
+      const rangeDates = new Set(range.dates);
+      draftRuleState.openedDates = draftRuleState.openedDates.filter((item) => !rangeDates.has(item));
       renderSelectedClosedDates();
       renderWorkbench();
     });
@@ -2178,17 +2236,12 @@ function hideDayDetailModal() {
   }
 }
 
-function getDateStatus(dateStr, ruleState) {
+function getAutomaticDateStatus(dateStr, ruleState) {
   const today = todayInProductTimeZone();
   const reasons = [];
 
   if (dateStr < today) {
     return { key: 'past', emoji: '⬜', label: '过去', reason: '过去日期', reasons };
-  }
-
-  if (ruleState.closedDates.includes(dateStr)) {
-    reasons.push('手动关闭');
-    return { key: 'manual-closed', emoji: '🔴', label: '关闭', reason: '手动关闭', reasons };
   }
 
   if (ruleState.advanceCloseDays > 0 && diffDays(today, dateStr) < ruleState.advanceCloseDays) {
@@ -2206,6 +2259,41 @@ function getDateStatus(dateStr, ruleState) {
   return { key: 'open', emoji: '🟢', label: '可售', reason: '默认可售', reasons };
 }
 
+function getDateStatus(dateStr, ruleState) {
+  const automaticStatus = getAutomaticDateStatus(dateStr, ruleState);
+  if (automaticStatus.key === 'past') {
+    return Object.assign({ overrideMode: 'follow-rules', automaticStatus }, automaticStatus);
+  }
+
+  const overrideMode = getDateOverrideMode(dateStr, ruleState.closedDates, ruleState.openedDates);
+  if (overrideMode === 'manual-open') {
+    const automaticReason = automaticStatus.key === 'open' ? null : automaticStatus.reason;
+    return {
+      key: 'manual-open',
+      emoji: '✅',
+      label: '打开',
+      reason: automaticReason ? '手动打开（覆盖' + automaticReason + '）' : '手动打开',
+      reasons: automaticReason ? ['手动打开', automaticReason] : ['手动打开'],
+      overrideMode,
+      automaticStatus
+    };
+  }
+
+  if (overrideMode === 'manual-closed') {
+    return {
+      key: 'manual-closed',
+      emoji: '🔴',
+      label: '关闭',
+      reason: '手动关闭',
+      reasons: ['手动关闭'],
+      overrideMode,
+      automaticStatus
+    };
+  }
+
+  return Object.assign({ overrideMode, automaticStatus }, automaticStatus);
+}
+
 function renderSummary() {
   const calendarRuleState = getCalendarRuleState(savedRuleState, draftRuleState);
   const summary = document.getElementById('availabilitySummary');
@@ -2216,7 +2304,8 @@ function renderSummary() {
     '<span class="badge bg-green-lt text-green">🟢 默认可售</span>' +
     '<span class="badge bg-orange-lt text-orange">⏳ 提前关闭 ' + calendarRuleState.advanceCloseDays + ' 天</span>' +
     '<span class="badge bg-azure-lt text-azure">📅 每周关闭 ' + escapeText(weeklyText) + '</span>' +
-    '<span class="badge bg-red-lt text-red">🔴 手动关闭 ' + calendarRuleState.closedDates.length + ' 天</span>';
+    '<span class="badge bg-red-lt text-red">🔴 手动关闭 ' + calendarRuleState.closedDates.length + ' 天</span>' +
+    '<span class="badge bg-green-lt text-green">✅ 手动打开 ' + calendarRuleState.openedDates.length + ' 天</span>';
 }
 
 function buildMonthCells(anchor) {
@@ -2240,7 +2329,19 @@ function buildMonthCells(anchor) {
 function openDayDetail(dateStr) {
   const calendarRuleState = getCalendarRuleState(savedRuleState, draftRuleState);
   const status = getDateStatus(dateStr, calendarRuleState);
-  const actionConfig = getDayOverrideAction(dateStr, draftRuleState.closedDates);
+  const overrideMode = getDateOverrideMode(dateStr, draftRuleState.closedDates, draftRuleState.openedDates);
+  const defaultActionConfig = getDayOverrideAction(overrideMode);
+  const actionConfig = overrideMode === 'follow-rules'
+    ? (status.key === 'open'
+        ? { action: 'close', label: '关闭当天', buttonClassName: 'btn btn-danger', targetMode: 'manual-closed' }
+        : { action: 'open', label: '打开当天', buttonClassName: 'btn btn-primary', targetMode: 'manual-open' })
+    : Object.assign({}, defaultActionConfig, {
+        targetMode: defaultActionConfig.action === 'open'
+          ? 'manual-open'
+          : defaultActionConfig.action === 'close'
+            ? 'manual-closed'
+            : 'follow-rules'
+      });
   const today = todayInProductTimeZone();
   document.getElementById('dayDetailTitle').textContent = dateStr;
   document.getElementById('dayDetailBody').innerHTML =
@@ -2251,18 +2352,27 @@ function openDayDetail(dateStr) {
     '</div>' +
     '<div class="text-secondary">今天：' + today + '</div>' +
     '<div><strong>逻辑命中：</strong> ' + escapeText(status.reasons.join('，') || '无') + '</div>' +
-    '<button id="toggleSingleDate" class="' + actionConfig.buttonClassName + '" type="button">' + actionConfig.label + '</button>';
+    '<div class="d-flex gap-2 flex-wrap">' +
+      '<button id="primaryToggleSingleDate" class="' + actionConfig.buttonClassName + '" type="button">' + actionConfig.label + '</button>' +
+      (overrideMode !== 'follow-rules' ? '<button id="followRulesSingleDate" class="btn btn-outline-secondary" type="button">遵循规律</button>' : '') +
+    '</div>';
 
-  document.getElementById('toggleSingleDate').addEventListener('click', () => {
-    if (actionConfig.action === 'open') {
-      draftRuleState.closedDates = draftRuleState.closedDates.filter((item) => item !== dateStr);
-    } else if (!draftRuleState.closedDates.includes(dateStr)) {
-      draftRuleState.closedDates = draftRuleState.closedDates.concat(dateStr).sort();
-    }
+  document.getElementById('primaryToggleSingleDate').addEventListener('click', () => {
+    draftRuleState = applyDateOverrideMode(dateStr, draftRuleState, actionConfig.targetMode);
     renderSelectedClosedDates();
     renderWorkbench();
     hideDayDetailModal();
   });
+
+  const followButton = document.getElementById('followRulesSingleDate');
+  if (followButton) {
+    followButton.addEventListener('click', () => {
+      draftRuleState = applyDateOverrideMode(dateStr, draftRuleState, 'follow-rules');
+      renderSelectedClosedDates();
+      renderWorkbench();
+      hideDayDetailModal();
+    });
+  }
 
   showDayDetailModal();
 }
@@ -2301,7 +2411,17 @@ function renderCalendar() {
     shell.appendChild(renderCalendarMonth(monthAnchor(offset), index));
   });
   shell.querySelectorAll('.day-cell[data-date]').forEach((button) => {
-    button.addEventListener('click', () => openDayDetail(button.getAttribute('data-date')));
+    button.addEventListener('click', () => {
+      const dateStr = button.getAttribute('data-date');
+      if (quickToggleCalendarMode) {
+        const currentMode = getDateOverrideMode(dateStr, draftRuleState.closedDates, draftRuleState.openedDates);
+        draftRuleState = applyDateOverrideMode(dateStr, draftRuleState, getNextDateOverrideMode(currentMode));
+        renderSelectedClosedDates();
+        renderWorkbench();
+        return;
+      }
+      openDayDetail(dateStr);
+    });
   });
 }
 
@@ -2320,6 +2440,7 @@ async function saveRules(partialPayload) {
         fullPayload.advanceCloseDays = draftRuleState.advanceCloseDays;
         fullPayload.weeklyClosedDays = draftRuleState.weeklyClosedDays;
         fullPayload.closedDates = draftRuleState.closedDates;
+        fullPayload.openedDates = draftRuleState.openedDates;
         return fullPayload;
       })();
   const data = await api('/admin/products/' + encodeURIComponent(PRODUCT_ID) + '/availability-rules', {
@@ -2334,6 +2455,9 @@ async function saveRules(partialPayload) {
   }
   if (Object.prototype.hasOwnProperty.call(payload, 'closedDates')) {
     savedRuleState.closedDates = draftRuleState.closedDates.slice();
+  }
+  if (Object.prototype.hasOwnProperty.call(payload, 'openedDates')) {
+    savedRuleState.openedDates = draftRuleState.openedDates.slice();
   }
   print(data);
   renderWorkbench();
@@ -2351,6 +2475,7 @@ function addClosedRange() {
   if (!from || !to) throw new Error('请选择关闭区间的开始和结束日期');
   if (to < from) throw new Error('结束日期不能早于开始日期');
   const set = new Set(draftRuleState.closedDates);
+  draftRuleState.openedDates = draftRuleState.openedDates.filter((item) => item < from || item > to);
   let cursor = from;
   while (cursor <= to) {
     set.add(cursor);
@@ -2381,7 +2506,8 @@ window.onAdminReady = async () => {
     savedRuleState = {
       advanceCloseDays: rules.data && typeof rules.data.advanceCloseDays === 'number' ? rules.data.advanceCloseDays : 0,
       weeklyClosedDays: rules.data && Array.isArray(rules.data.weeklyClosedDays) ? rules.data.weeklyClosedDays : [],
-      closedDates: rules.data && Array.isArray(rules.data.closedDates) ? rules.data.closedDates : []
+      closedDates: rules.data && Array.isArray(rules.data.closedDates) ? rules.data.closedDates : [],
+      openedDates: rules.data && Array.isArray(rules.data.openedDates) ? rules.data.openedDates : []
     };
     draftRuleState = JSON.parse(JSON.stringify(savedRuleState));
     syncInputsFromDraft();
@@ -2404,6 +2530,7 @@ document.getElementById('addClosedRange').addEventListener('click', () => {
 });
 document.getElementById('clearClosedDates').addEventListener('click', () => {
   draftRuleState.closedDates = [];
+  draftRuleState.openedDates = [];
   renderSelectedClosedDates();
   renderWorkbench();
 });
@@ -2414,7 +2541,8 @@ document.getElementById('saveWeeklyClosedRule').addEventListener('click', () => 
   weeklyClosedDays: draftRuleState.weeklyClosedDays
 }).catch((error) => print(String(error))));
 document.getElementById('saveClosedDatesRule').addEventListener('click', () => saveRules({
-  closedDates: draftRuleState.closedDates
+  closedDates: draftRuleState.closedDates,
+  openedDates: draftRuleState.openedDates
 }).catch((error) => print(String(error))));
 document.getElementById('resetAvailabilityRules').addEventListener('click', restoreSavedRules);
 document.getElementById('openSettingsPage').addEventListener('click', () => {
@@ -2433,6 +2561,9 @@ document.getElementById('calendarToday').addEventListener('click', () => {
   renderCalendar();
 });
 document.getElementById('closeDayDetailModal').addEventListener('click', hideDayDetailModal);
+document.getElementById('quickToggleCalendarMode').addEventListener('change', (event) => {
+  quickToggleCalendarMode = event.target.checked;
+});
 
 initializeWorkbenchView();
 

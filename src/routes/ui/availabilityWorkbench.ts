@@ -2,6 +2,7 @@ export type AvailabilityRuleState = {
   advanceCloseDays: number;
   weeklyClosedDays: number[];
   closedDates: string[];
+  openedDates: string[];
 };
 
 export type ClosedDateRange = {
@@ -17,7 +18,8 @@ export function getCalendarRuleState(
   return {
     advanceCloseDays: savedRuleState.advanceCloseDays,
     weeklyClosedDays: savedRuleState.weeklyClosedDays.slice(),
-    closedDates: draftRuleState.closedDates.slice()
+    closedDates: draftRuleState.closedDates.slice(),
+    openedDates: draftRuleState.openedDates.slice()
   };
 }
 
@@ -69,22 +71,86 @@ export function getVisibleCalendarOffsets(calendarOffset: number, monthCount = 4
   return Array.from({ length: monthCount }, (_, index) => calendarOffset + index);
 }
 
-export function getDayOverrideAction(dateStr: string, closedDates: string[]): {
+export type DayOverrideMode = 'manual-open' | 'manual-closed' | 'follow-rules';
+
+export function getDateOverrideMode(
+  dateStr: string,
+  closedDates: string[],
+  openedDates: string[]
+): DayOverrideMode {
+  if (openedDates.includes(dateStr)) {
+    return 'manual-open';
+  }
+
+  if (closedDates.includes(dateStr)) {
+    return 'manual-closed';
+  }
+
+  return 'follow-rules';
+}
+
+export function getNextDateOverrideMode(mode: DayOverrideMode): DayOverrideMode {
+  if (mode === 'manual-closed') {
+    return 'follow-rules';
+  }
+
+  if (mode === 'follow-rules') {
+    return 'manual-open';
+  }
+
+  return 'manual-closed';
+}
+
+export function applyDateOverrideMode(
+  dateStr: string,
+  ruleState: AvailabilityRuleState,
+  mode: DayOverrideMode
+): AvailabilityRuleState {
+  const closedDates = ruleState.closedDates.filter((item) => item !== dateStr);
+  const openedDates = ruleState.openedDates.filter((item) => item !== dateStr);
+
+  if (mode === 'manual-closed') {
+    closedDates.push(dateStr);
+  } else if (mode === 'manual-open') {
+    openedDates.push(dateStr);
+  }
+
+  return {
+    advanceCloseDays: ruleState.advanceCloseDays,
+    weeklyClosedDays: ruleState.weeklyClosedDays.slice(),
+    closedDates: closedDates.sort(),
+    openedDates: openedDates.sort()
+  };
+}
+
+export function getDayOverrideAction(mode: DayOverrideMode): {
   action: 'open' | 'close';
   label: string;
   buttonClassName: string;
+} | {
+  action: 'follow-rules';
+  label: string;
+  buttonClassName: string;
 } {
-  if (closedDates.includes(dateStr)) {
+  if (mode === 'manual-closed') {
     return {
       action: 'open',
-      label: '打开当天日历',
+      label: '打开当天',
       buttonClassName: 'btn btn-primary'
+    };
+  }
+
+  if (mode === 'manual-open') {
+    return {
+      action: 'follow-rules',
+      label: '遵循规律',
+      buttonClassName: 'btn btn-secondary'
     };
   }
 
   return {
     action: 'close',
-    label: '关闭当天日历',
+    label: '关闭当天',
     buttonClassName: 'btn btn-danger'
   };
 }

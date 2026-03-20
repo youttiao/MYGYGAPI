@@ -1,5 +1,6 @@
 export type AvailabilityRuleState = {
   advanceCloseDays: number;
+  advanceCloseHours: number;
   weeklyClosedDays: number[];
   closedDates: string[];
   openedDates: string[];
@@ -13,13 +14,14 @@ export type ClosedDateRange = {
 
 export function getCalendarRuleState(
   savedRuleState: AvailabilityRuleState,
-  draftRuleState: AvailabilityRuleState
+  _draftRuleState: AvailabilityRuleState
 ): AvailabilityRuleState {
   return {
     advanceCloseDays: savedRuleState.advanceCloseDays,
+    advanceCloseHours: savedRuleState.advanceCloseHours,
     weeklyClosedDays: savedRuleState.weeklyClosedDays.slice(),
-    closedDates: draftRuleState.closedDates.slice(),
-    openedDates: draftRuleState.openedDates.slice()
+    closedDates: savedRuleState.closedDates.slice(),
+    openedDates: savedRuleState.openedDates.slice()
   };
 }
 
@@ -117,10 +119,27 @@ export function applyDateOverrideMode(
 
   return {
     advanceCloseDays: ruleState.advanceCloseDays,
+    advanceCloseHours: ruleState.advanceCloseHours,
     weeklyClosedDays: ruleState.weeklyClosedDays.slice(),
     closedDates: closedDates.sort(),
     openedDates: openedDates.sort()
   };
+}
+
+export function prunePastDates(dateStrings: string[], today: string): string[] {
+  return Array.from(new Set(dateStrings.filter((dateStr) => dateStr >= today))).sort();
+}
+
+export function splitAdvanceCloseHours(totalHours: number): { days: number; hours: number } {
+  const normalized = Math.max(0, totalHours);
+  return {
+    days: Math.floor(normalized / 24),
+    hours: normalized % 24
+  };
+}
+
+export function combineAdvanceCloseDuration(days: number, hours: number): number {
+  return Math.max(0, days) * 24 + Math.max(0, hours);
 }
 
 export function getDayOverrideAction(mode: DayOverrideMode): {

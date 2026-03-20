@@ -308,6 +308,8 @@ describe('GYG OPS minimal system', () => {
 
     expect(getRes.statusCode).toBe(200);
     expect(getRes.json().data).toMatchObject({
+      advanceCloseDays: 0,
+      advanceCloseHours: 0,
       closedDates: ['2030-01-02'],
       openedDates: ['2030-01-03']
     });
@@ -320,6 +322,8 @@ describe('GYG OPS minimal system', () => {
         'content-type': 'application/json'
       },
       payload: {
+        advanceCloseDays: 2,
+        advanceCloseHours: 5,
         openedDates: ['2030-01-05'],
         closedDates: ['2030-01-06']
       }
@@ -339,5 +343,10 @@ describe('GYG OPS minimal system', () => {
       { date: '2030-01-05', reason: 'manual-open' },
       { date: '2030-01-06', reason: 'manual-close' }
     ]);
+
+    const updatedProduct = await prisma.product.findUniqueOrThrow({
+      where: { id: productInternalId }
+    });
+    expect(updatedProduct.autoCloseHours).toBe(53);
   });
 });

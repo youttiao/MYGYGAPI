@@ -130,8 +130,10 @@ const MANUAL_OPEN_REASON = 'manual-open';
 
       await fastify.prisma.$transaction(async (tx) => {
         const data: Record<string, unknown> = {};
-        if (body.advanceCloseDays !== undefined) {
-          data.autoCloseHours = body.advanceCloseDays * 24;
+        if (body.advanceCloseDays !== undefined || body.advanceCloseHours !== undefined) {
+          const days = body.advanceCloseDays ?? Math.floor((product.autoCloseHours ?? 0) / 24);
+          const hours = body.advanceCloseHours ?? ((product.autoCloseHours ?? 0) % 24);
+          data.autoCloseHours = days * 24 + hours;
         }
         if (body.weeklyClosedDays !== undefined) {
           data.weeklyClosedDays = body.weeklyClosedDays;
@@ -209,7 +211,8 @@ const MANUAL_OPEN_REASON = 'manual-open';
 
       return {
         data: {
-          advanceCloseDays: Math.max(0, Math.ceil((product.autoCloseHours ?? 0) / 24)),
+          advanceCloseDays: Math.max(0, Math.floor((product.autoCloseHours ?? 0) / 24)),
+          advanceCloseHours: Math.max(0, (product.autoCloseHours ?? 0) % 24),
           weeklyClosedDays,
           closedDates: Array.isArray((product as any).closedDates)
             ? (product as any).closedDates

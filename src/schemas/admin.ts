@@ -155,6 +155,7 @@ export const adminProductSettingsBodySchema = z
 
 export const adminAvailabilityRulesBodySchema = z.object({
   advanceCloseDays: z.number().int().nonnegative().optional(),
+  advanceCloseHours: z.number().int().min(0).max(23).optional(),
   weeklyClosedDays: z.array(z.number().int().min(1).max(7)).optional(),
   closedDates: z.array(z.string().regex(/^\d{4}-\d{2}-\d{2}$/)).optional(),
   openedDates: z.array(z.string().regex(/^\d{4}-\d{2}-\d{2}$/)).optional()

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   applyDateOverrideMode,
+  combineAdvanceCloseDuration,
   formatClosedDateRange,
   hasBootstrapModalApi,
   getDayOverrideAction,
@@ -9,6 +10,8 @@ import {
   getVisibleCalendarOffsets,
   getCalendarRuleState,
   groupClosedDatesIntoRanges,
+  prunePastDates,
+  splitAdvanceCloseHours,
   type AvailabilityRuleState
 } from '../src/routes/ui/availabilityWorkbench.js';
 
@@ -16,12 +19,14 @@ describe('availability workbench helpers', () => {
   it('uses saved advance close and weekly rules for calendar rendering', () => {
     const savedRuleState: AvailabilityRuleState = {
       advanceCloseDays: 3,
+      advanceCloseHours: 5,
       weeklyClosedDays: [2, 4],
       closedDates: ['2026-03-28'],
       openedDates: ['2026-03-30']
     };
     const draftRuleState: AvailabilityRuleState = {
       advanceCloseDays: 14,
+      advanceCloseHours: 7,
       weeklyClosedDays: [1, 3, 5],
       closedDates: ['2026-03-28', '2026-03-29'],
       openedDates: ['2026-03-30', '2026-03-31']
@@ -29,9 +34,10 @@ describe('availability workbench helpers', () => {
 
     expect(getCalendarRuleState(savedRuleState, draftRuleState)).toEqual({
       advanceCloseDays: 3,
+      advanceCloseHours: 5,
       weeklyClosedDays: [2, 4],
-      closedDates: ['2026-03-28', '2026-03-29'],
-      openedDates: ['2026-03-30', '2026-03-31']
+      closedDates: ['2026-03-28'],
+      openedDates: ['2026-03-30']
     });
   });
 
@@ -98,6 +104,7 @@ describe('availability workbench helpers', () => {
         '2026-03-20',
         {
           advanceCloseDays: 0,
+          advanceCloseHours: 0,
           weeklyClosedDays: [],
           closedDates: ['2026-03-21'],
           openedDates: ['2026-03-22']
@@ -106,6 +113,7 @@ describe('availability workbench helpers', () => {
       )
     ).toEqual({
       advanceCloseDays: 0,
+      advanceCloseHours: 0,
       weeklyClosedDays: [],
       closedDates: ['2026-03-21'],
       openedDates: ['2026-03-20', '2026-03-22']
@@ -116,6 +124,7 @@ describe('availability workbench helpers', () => {
         '2026-03-22',
         {
           advanceCloseDays: 0,
+          advanceCloseHours: 0,
           weeklyClosedDays: [],
           closedDates: ['2026-03-21'],
           openedDates: ['2026-03-22']
@@ -124,9 +133,23 @@ describe('availability workbench helpers', () => {
       )
     ).toEqual({
       advanceCloseDays: 0,
+      advanceCloseHours: 0,
       weeklyClosedDays: [],
       closedDates: ['2026-03-21'],
       openedDates: []
     });
+  });
+
+  it('prunes past special-date overrides and keeps today onward', () => {
+    expect(prunePastDates(['2026-03-18', '2026-03-20', '2026-03-21'], '2026-03-20')).toEqual([
+      '2026-03-20',
+      '2026-03-21'
+    ]);
+  });
+
+  it('splits and combines advance close day-hour durations', () => {
+    expect(splitAdvanceCloseHours(0)).toEqual({ days: 0, hours: 0 });
+    expect(splitAdvanceCloseHours(49)).toEqual({ days: 2, hours: 1 });
+    expect(combineAdvanceCloseDuration(2, 1)).toBe(49);
   });
 });

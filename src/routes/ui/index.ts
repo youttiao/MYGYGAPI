@@ -1,6 +1,7 @@
 import type { FastifyPluginAsync } from 'fastify';
 import {
   applyDateOverrideMode,
+  combineAdvanceCloseDuration,
   formatClosedDateRange,
   hasBootstrapModalApi,
   getDayOverrideAction,
@@ -8,7 +9,9 @@ import {
   getNextDateOverrideMode,
   getVisibleCalendarOffsets,
   getCalendarRuleState,
-  groupClosedDatesIntoRanges
+  groupClosedDatesIntoRanges,
+  prunePastDates,
+  splitAdvanceCloseHours
 } from './availabilityWorkbench.js';
 
 const TABLER_VERSION = '1.4.0';
@@ -662,6 +665,11 @@ function renderDocument(title: string, body: string, script: string): string {
       justify-content: space-between;
       gap: 0.75rem;
       margin-bottom: 1rem;
+    }
+
+    .save-feedback {
+      min-height: 1.25rem;
+      font-size: 0.78rem;
     }
 
     .calendar-legend .badge {
@@ -1885,24 +1893,30 @@ function availabilityWorkbenchPage(id: string, timezone: string): string {
                 <h3 class="card-title">⏳ 提前停售</h3>
               </div>
               <div class="card-body d-grid gap-3">
-                <div class="form-label mb-0">提前 N 天停售</div>
-                <div class="inline-choice-group">
-                  <input class="btn-check" type="radio" name="advance-close-days" id="advance-close-0" value="0" checked />
-                  <label class="btn btn-outline-primary" for="advance-close-0">0 天</label>
-                  <input class="btn-check" type="radio" name="advance-close-days" id="advance-close-1" value="1" />
-                  <label class="btn btn-outline-primary" for="advance-close-1">1 天</label>
-                  <input class="btn-check" type="radio" name="advance-close-days" id="advance-close-3" value="3" />
-                  <label class="btn btn-outline-primary" for="advance-close-3">3 天</label>
-                  <input class="btn-check" type="radio" name="advance-close-days" id="advance-close-7" value="7" />
-                  <label class="btn btn-outline-primary" for="advance-close-7">7 天</label>
-                  <input class="btn-check" type="radio" name="advance-close-days" id="advance-close-14" value="14" />
-                  <label class="btn btn-outline-primary" for="advance-close-14">14 天</label>
-                  <input class="btn-check" type="radio" name="advance-close-days" id="advance-close-30" value="30" />
-                  <label class="btn btn-outline-primary" for="advance-close-30">30 天</label>
+                <div class="row g-3">
+                  <div class="col-6">
+                    <label class="form-label mb-0">
+                      <span class="form-label-description">天</span>
+                      <select id="advanceCloseDays" class="form-select">
+                        <option value="0">0 天</option>
+                        ${Array.from({ length: 30 }, (_, index) => `<option value="${index + 1}">${index + 1} 天</option>`).join('')}
+                      </select>
+                    </label>
+                  </div>
+                  <div class="col-6">
+                    <label class="form-label mb-0">
+                      <span class="form-label-description">小时</span>
+                      <select id="advanceCloseHours" class="form-select">
+                        <option value="0">0 小时</option>
+                        ${Array.from({ length: 23 }, (_, index) => `<option value="${index + 1}">${index + 1} 小时</option>`).join('')}
+                      </select>
+                    </label>
+                  </div>
                 </div>
                 <div class="d-flex gap-2">
                   <button id="saveAdvanceCloseRule" class="btn btn-primary" type="button">保存提前停售</button>
                 </div>
+                <div id="advanceCloseFeedback" class="save-feedback text-secondary"></div>
                 <div class="text-secondary small">修改后不会立即作用到日历，点击保存后才会生效。</div>
               </div>
             </div>
@@ -1914,25 +1928,18 @@ function availabilityWorkbenchPage(id: string, timezone: string): string {
                 <h3 class="card-title">📅 每周关闭</h3>
               </div>
               <div class="card-body d-grid gap-3">
-                <div class="inline-choice-group">
-                  <input class="btn-check" type="checkbox" id="weekday-1" value="1" />
-                  <label class="btn btn-outline-primary" for="weekday-1">周一</label>
-                  <input class="btn-check" type="checkbox" id="weekday-2" value="2" />
-                  <label class="btn btn-outline-primary" for="weekday-2">周二</label>
-                  <input class="btn-check" type="checkbox" id="weekday-3" value="3" />
-                  <label class="btn btn-outline-primary" for="weekday-3">周三</label>
-                  <input class="btn-check" type="checkbox" id="weekday-4" value="4" />
-                  <label class="btn btn-outline-primary" for="weekday-4">周四</label>
-                  <input class="btn-check" type="checkbox" id="weekday-5" value="5" />
-                  <label class="btn btn-outline-primary" for="weekday-5">周五</label>
-                  <input class="btn-check" type="checkbox" id="weekday-6" value="6" />
-                  <label class="btn btn-outline-primary" for="weekday-6">周六</label>
-                  <input class="btn-check" type="checkbox" id="weekday-7" value="7" />
-                  <label class="btn btn-outline-primary" for="weekday-7">周日</label>
+                <div class="d-grid gap-2">
+                  ${['周一', '周二', '周三', '周四', '周五', '周六', '周日'].map((label, index) => `
+                    <label class="form-check">
+                      <input class="form-check-input" type="checkbox" id="weekday-${index + 1}" value="${index + 1}" />
+                      <span class="form-check-label">${label}</span>
+                    </label>
+                  `).join('')}
                 </div>
                 <div class="d-flex gap-2">
                   <button id="saveWeeklyClosedRule" class="btn btn-primary" type="button">保存每周关闭</button>
                 </div>
+                <div id="weeklyClosedFeedback" class="save-feedback text-secondary"></div>
               </div>
             </div>
           </div>
@@ -1959,12 +1966,14 @@ function availabilityWorkbenchPage(id: string, timezone: string): string {
                 </div>
                 <div class="d-flex gap-2">
                   <button id="addClosedRange" class="btn btn-outline-danger" type="button">添加关闭区间</button>
+                  <button id="addOpenedRange" class="btn btn-outline-success" type="button">添加打开区间</button>
                   <button id="clearClosedDates" class="btn btn-outline-secondary" type="button">清空手动关闭</button>
                 </div>
                 <div id="selectedClosedDates" class="selected-date-list"></div>
                 <div class="d-flex gap-2">
-                  <button id="saveClosedDatesRule" class="btn btn-primary" type="button">保存特殊日期关闭</button>
+                  <button id="saveClosedDatesRule" class="btn btn-primary" type="button">保存特殊日期设置</button>
                 </div>
+                <div id="specialDatesFeedback" class="save-feedback text-secondary"></div>
               </div>
             </div>
           </div>
@@ -2041,6 +2050,7 @@ function availabilityWorkbenchPage(id: string, timezone: string): string {
 
 const script = sharedScript(`
 const applyDateOverrideMode = ${applyDateOverrideMode.toString()};
+const combineAdvanceCloseDuration = ${combineAdvanceCloseDuration.toString()};
 const getCalendarRuleState = ${getCalendarRuleState.toString()};
 const groupClosedDatesIntoRanges = ${groupClosedDatesIntoRanges.toString()};
 const formatClosedDateRange = ${formatClosedDateRange.toString()};
@@ -2049,18 +2059,22 @@ const getNextDateOverrideMode = ${getNextDateOverrideMode.toString()};
 const getVisibleCalendarOffsets = ${getVisibleCalendarOffsets.toString()};
 const getDayOverrideAction = ${getDayOverrideAction.toString()};
 const hasBootstrapModalApi = ${hasBootstrapModalApi.toString()};
+const prunePastDates = ${prunePastDates.toString()};
+const splitAdvanceCloseHours = ${splitAdvanceCloseHours.toString()};
 const PRODUCT_ID = ${JSON.stringify(id)};
 const PRODUCT_TIMEZONE = ${JSON.stringify(timezone)};
 const WEEKDAY_LABELS = ['周一', '周二', '周三', '周四', '周五', '周六', '周日'];
 let workbenchProduct = null;
 let savedRuleState = {
   advanceCloseDays: 0,
+  advanceCloseHours: 0,
   weeklyClosedDays: [],
   closedDates: [],
   openedDates: []
 };
 let draftRuleState = {
   advanceCloseDays: 0,
+  advanceCloseHours: 0,
   weeklyClosedDays: [],
   closedDates: [],
   openedDates: []
@@ -2141,15 +2155,16 @@ function getCheckedWeekdays() {
 }
 
 function getSelectedAdvanceCloseDays() {
-  const selected = document.querySelector('input[name="advance-close-days"]:checked');
-  return selected ? Number(selected.value) : 0;
+  return Number(document.getElementById('advanceCloseDays').value || '0');
+}
+
+function getSelectedAdvanceCloseHours() {
+  return Number(document.getElementById('advanceCloseHours').value || '0');
 }
 
 function syncInputsFromDraft() {
-  const selectedAdvance = document.querySelector('input[name="advance-close-days"][value="' + draftRuleState.advanceCloseDays + '"]');
-  if (selectedAdvance) {
-    selectedAdvance.checked = true;
-  }
+  document.getElementById('advanceCloseDays').value = String(draftRuleState.advanceCloseDays);
+  document.getElementById('advanceCloseHours').value = String(draftRuleState.advanceCloseHours || 0);
   document.querySelectorAll('[id^="weekday-"]').forEach((input) => {
     input.checked = draftRuleState.weeklyClosedDays.includes(Number(input.value));
   });
@@ -2158,10 +2173,36 @@ function syncInputsFromDraft() {
 
 function syncDraftFromInputs() {
   draftRuleState.advanceCloseDays = Math.max(0, getSelectedAdvanceCloseDays());
+  draftRuleState.advanceCloseHours = Math.max(0, getSelectedAdvanceCloseHours());
   draftRuleState.weeklyClosedDays = getCheckedWeekdays();
 }
 
+function showSaveFeedback(elementId, kind, message) {
+  const element = document.getElementById(elementId);
+  if (!element) return;
+  element.className = 'save-feedback';
+  if (kind === 'success') {
+    element.classList.add('text-success');
+  } else if (kind === 'error') {
+    element.classList.add('text-danger');
+  } else {
+    element.classList.add('text-secondary');
+  }
+  element.textContent = message;
+}
+
+function clearSaveFeedback(elementId) {
+  showSaveFeedback(elementId, 'idle', '');
+}
+
+function pruneDraftSpecialDates() {
+  const today = todayInProductTimeZone();
+  draftRuleState.closedDates = prunePastDates(draftRuleState.closedDates, today);
+  draftRuleState.openedDates = prunePastDates(draftRuleState.openedDates, today);
+}
+
 function renderSelectedClosedDates() {
+  pruneDraftSpecialDates();
   const container = document.getElementById('selectedClosedDates');
   container.innerHTML = '';
   if (!draftRuleState.closedDates.length && !draftRuleState.openedDates.length) {
@@ -2177,7 +2218,7 @@ function renderSelectedClosedDates() {
       const rangeDates = new Set(range.dates);
       draftRuleState.closedDates = draftRuleState.closedDates.filter((item) => !rangeDates.has(item));
       renderSelectedClosedDates();
-      renderWorkbench();
+      showSaveFeedback('specialDatesFeedback', 'idle', '草稿已更新，点击保存特殊日期设置后生效到日历');
     });
     container.appendChild(badge);
   });
@@ -2190,7 +2231,7 @@ function renderSelectedClosedDates() {
       const rangeDates = new Set(range.dates);
       draftRuleState.openedDates = draftRuleState.openedDates.filter((item) => !rangeDates.has(item));
       renderSelectedClosedDates();
-      renderWorkbench();
+      showSaveFeedback('specialDatesFeedback', 'idle', '草稿已更新，点击保存特殊日期设置后生效到日历');
     });
     container.appendChild(badge);
   });
@@ -2239,13 +2280,17 @@ function hideDayDetailModal() {
 function getAutomaticDateStatus(dateStr, ruleState) {
   const today = todayInProductTimeZone();
   const reasons = [];
+  const advanceCloseTotalHours = combineAdvanceCloseDuration(
+    ruleState.advanceCloseDays || 0,
+    ruleState.advanceCloseHours || 0
+  );
 
   if (dateStr < today) {
     return { key: 'past', emoji: '⬜', label: '过去', reason: '过去日期', reasons };
   }
 
-  if (ruleState.advanceCloseDays > 0 && diffDays(today, dateStr) < ruleState.advanceCloseDays) {
-    reasons.push('提前' + ruleState.advanceCloseDays + '天停售');
+  if (advanceCloseTotalHours > 0 && (diffDays(today, dateStr) * 24) < advanceCloseTotalHours) {
+    reasons.push('提前' + ruleState.advanceCloseDays + '天' + (ruleState.advanceCloseHours || 0) + '小时停售');
     return { key: 'advance-closed', emoji: '⏳', label: '停售', reason: '提前关闭', reasons };
   }
 
@@ -2297,12 +2342,13 @@ function getDateStatus(dateStr, ruleState) {
 function renderSummary() {
   const calendarRuleState = getCalendarRuleState(savedRuleState, draftRuleState);
   const summary = document.getElementById('availabilitySummary');
+  const advanceText = calendarRuleState.advanceCloseDays + ' 天 ' + (calendarRuleState.advanceCloseHours || 0) + ' 小时';
   const weeklyText = calendarRuleState.weeklyClosedDays.length
     ? calendarRuleState.weeklyClosedDays.map((day) => WEEKDAY_LABELS[day - 1]).join(' / ')
     : '无';
   summary.innerHTML =
     '<span class="badge bg-green-lt text-green">🟢 默认可售</span>' +
-    '<span class="badge bg-orange-lt text-orange">⏳ 提前关闭 ' + calendarRuleState.advanceCloseDays + ' 天</span>' +
+    '<span class="badge bg-orange-lt text-orange">⏳ 提前关闭 ' + advanceText + '</span>' +
     '<span class="badge bg-azure-lt text-azure">📅 每周关闭 ' + escapeText(weeklyText) + '</span>' +
     '<span class="badge bg-red-lt text-red">🔴 手动关闭 ' + calendarRuleState.closedDates.length + ' 天</span>' +
     '<span class="badge bg-green-lt text-green">✅ 手动打开 ' + calendarRuleState.openedDates.length + ' 天</span>';
@@ -2361,6 +2407,7 @@ function openDayDetail(dateStr) {
     draftRuleState = applyDateOverrideMode(dateStr, draftRuleState, actionConfig.targetMode);
     renderSelectedClosedDates();
     renderWorkbench();
+    showSaveFeedback('specialDatesFeedback', 'idle', '草稿已更新，点击保存特殊日期设置后生效到日历');
     hideDayDetailModal();
   });
 
@@ -2370,6 +2417,7 @@ function openDayDetail(dateStr) {
       draftRuleState = applyDateOverrideMode(dateStr, draftRuleState, 'follow-rules');
       renderSelectedClosedDates();
       renderWorkbench();
+      showSaveFeedback('specialDatesFeedback', 'idle', '草稿已更新，点击保存特殊日期设置后生效到日历');
       hideDayDetailModal();
     });
   }
@@ -2418,6 +2466,7 @@ function renderCalendar() {
         draftRuleState = applyDateOverrideMode(dateStr, draftRuleState, getNextDateOverrideMode(currentMode));
         renderSelectedClosedDates();
         renderWorkbench();
+        showSaveFeedback('specialDatesFeedback', 'idle', '草稿已更新，点击保存特殊日期设置后生效到日历');
         return;
       }
       openDayDetail(dateStr);
@@ -2438,6 +2487,7 @@ async function saveRules(partialPayload) {
     : (() => {
         const fullPayload = {};
         fullPayload.advanceCloseDays = draftRuleState.advanceCloseDays;
+        fullPayload.advanceCloseHours = draftRuleState.advanceCloseHours || 0;
         fullPayload.weeklyClosedDays = draftRuleState.weeklyClosedDays;
         fullPayload.closedDates = draftRuleState.closedDates;
         fullPayload.openedDates = draftRuleState.openedDates;
@@ -2449,6 +2499,9 @@ async function saveRules(partialPayload) {
   });
   if (Object.prototype.hasOwnProperty.call(payload, 'advanceCloseDays')) {
     savedRuleState.advanceCloseDays = draftRuleState.advanceCloseDays;
+  }
+  if (Object.prototype.hasOwnProperty.call(payload, 'advanceCloseHours')) {
+    savedRuleState.advanceCloseHours = draftRuleState.advanceCloseHours || 0;
   }
   if (Object.prototype.hasOwnProperty.call(payload, 'weeklyClosedDays')) {
     savedRuleState.weeklyClosedDays = draftRuleState.weeklyClosedDays.slice();
@@ -2483,7 +2536,22 @@ function addClosedRange() {
   }
   draftRuleState.closedDates = Array.from(set).sort();
   renderSelectedClosedDates();
-  renderWorkbench();
+}
+
+function addOpenedRange() {
+  const from = document.getElementById('closeRangeFrom').value;
+  const to = document.getElementById('closeRangeTo').value;
+  if (!from || !to) throw new Error('请选择打开区间的开始和结束日期');
+  if (to < from) throw new Error('结束日期不能早于开始日期');
+  const set = new Set(draftRuleState.openedDates);
+  draftRuleState.closedDates = draftRuleState.closedDates.filter((item) => item < from || item > to);
+  let cursor = from;
+  while (cursor <= to) {
+    set.add(cursor);
+    cursor = addDays(cursor, 1);
+  }
+  draftRuleState.openedDates = Array.from(set).sort();
+  renderSelectedClosedDates();
 }
 
 function initializeWorkbenchView() {
@@ -2505,10 +2573,14 @@ window.onAdminReady = async () => {
     document.getElementById('availabilitySubline').textContent = 'Supplier ' + ((workbenchProduct.data && workbenchProduct.data.supplierId) || '-') + ' · External ' + ((workbenchProduct.data && workbenchProduct.data.productId) || '-') + ' · ' + PRODUCT_TIMEZONE;
     savedRuleState = {
       advanceCloseDays: rules.data && typeof rules.data.advanceCloseDays === 'number' ? rules.data.advanceCloseDays : 0,
+      advanceCloseHours: rules.data && typeof rules.data.advanceCloseHours === 'number' ? rules.data.advanceCloseHours : 0,
       weeklyClosedDays: rules.data && Array.isArray(rules.data.weeklyClosedDays) ? rules.data.weeklyClosedDays : [],
       closedDates: rules.data && Array.isArray(rules.data.closedDates) ? rules.data.closedDates : [],
       openedDates: rules.data && Array.isArray(rules.data.openedDates) ? rules.data.openedDates : []
     };
+    const today = todayInProductTimeZone();
+    savedRuleState.closedDates = prunePastDates(savedRuleState.closedDates, today);
+    savedRuleState.openedDates = prunePastDates(savedRuleState.openedDates, today);
     draftRuleState = JSON.parse(JSON.stringify(savedRuleState));
     syncInputsFromDraft();
     document.getElementById('closeRangeFrom').value = todayInProductTimeZone();
@@ -2519,31 +2591,68 @@ window.onAdminReady = async () => {
   }
 };
 
-document.querySelectorAll('input[name="advance-close-days"]').forEach((input) => input.addEventListener('change', renderWorkbench));
-document.querySelectorAll('[id^="weekday-"]').forEach((input) => input.addEventListener('change', renderWorkbench));
+document.getElementById('advanceCloseDays').addEventListener('change', () => {
+  syncDraftFromInputs();
+  showSaveFeedback('advanceCloseFeedback', 'idle', '草稿已更新，点击保存提前停售后生效到日历');
+});
+document.getElementById('advanceCloseHours').addEventListener('change', () => {
+  syncDraftFromInputs();
+  showSaveFeedback('advanceCloseFeedback', 'idle', '草稿已更新，点击保存提前停售后生效到日历');
+});
+document.querySelectorAll('[id^="weekday-"]').forEach((input) => input.addEventListener('change', () => {
+  syncDraftFromInputs();
+  showSaveFeedback('weeklyClosedFeedback', 'idle', '草稿已更新，点击保存每周关闭后生效到日历');
+}));
 document.getElementById('addClosedRange').addEventListener('click', () => {
   try {
     addClosedRange();
+    showSaveFeedback('specialDatesFeedback', 'idle', '草稿已更新，点击保存特殊日期设置后生效到日历');
   } catch (error) {
     print(String(error));
+    showSaveFeedback('specialDatesFeedback', 'error', String(error));
+  }
+});
+document.getElementById('addOpenedRange').addEventListener('click', () => {
+  try {
+    addOpenedRange();
+    showSaveFeedback('specialDatesFeedback', 'idle', '草稿已更新，点击保存特殊日期设置后生效到日历');
+  } catch (error) {
+    print(String(error));
+    showSaveFeedback('specialDatesFeedback', 'error', String(error));
   }
 });
 document.getElementById('clearClosedDates').addEventListener('click', () => {
   draftRuleState.closedDates = [];
   draftRuleState.openedDates = [];
   renderSelectedClosedDates();
-  renderWorkbench();
+  showSaveFeedback('specialDatesFeedback', 'idle', '草稿已清空，点击保存特殊日期设置后生效到日历');
 });
 document.getElementById('saveAdvanceCloseRule').addEventListener('click', () => saveRules({
-  advanceCloseDays: draftRuleState.advanceCloseDays
-}).catch((error) => print(String(error))));
+  advanceCloseDays: draftRuleState.advanceCloseDays,
+  advanceCloseHours: draftRuleState.advanceCloseHours || 0
+}).then(() => {
+  showSaveFeedback('advanceCloseFeedback', 'success', '提前停售已保存并生效');
+}).catch((error) => {
+  print(String(error));
+  showSaveFeedback('advanceCloseFeedback', 'error', String(error));
+}));
 document.getElementById('saveWeeklyClosedRule').addEventListener('click', () => saveRules({
   weeklyClosedDays: draftRuleState.weeklyClosedDays
-}).catch((error) => print(String(error))));
+}).then(() => {
+  showSaveFeedback('weeklyClosedFeedback', 'success', '每周关闭已保存并生效');
+}).catch((error) => {
+  print(String(error));
+  showSaveFeedback('weeklyClosedFeedback', 'error', String(error));
+}));
 document.getElementById('saveClosedDatesRule').addEventListener('click', () => saveRules({
-  closedDates: draftRuleState.closedDates,
-  openedDates: draftRuleState.openedDates
-}).catch((error) => print(String(error))));
+  closedDates: prunePastDates(draftRuleState.closedDates, todayInProductTimeZone()),
+  openedDates: prunePastDates(draftRuleState.openedDates, todayInProductTimeZone())
+}).then(() => {
+  showSaveFeedback('specialDatesFeedback', 'success', '特殊日期设置已保存并生效');
+}).catch((error) => {
+  print(String(error));
+  showSaveFeedback('specialDatesFeedback', 'error', String(error));
+}));
 document.getElementById('resetAvailabilityRules').addEventListener('click', restoreSavedRules);
 document.getElementById('openSettingsPage').addEventListener('click', () => {
   window.location.href = '/products/' + encodeURIComponent(PRODUCT_ID) + '/settings';
@@ -2563,6 +2672,9 @@ document.getElementById('calendarToday').addEventListener('click', () => {
 document.getElementById('closeDayDetailModal').addEventListener('click', hideDayDetailModal);
 document.getElementById('quickToggleCalendarMode').addEventListener('change', (event) => {
   quickToggleCalendarMode = event.target.checked;
+  showSaveFeedback('specialDatesFeedback', 'idle', quickToggleCalendarMode
+    ? '快速开关模式已开启，点击日期只更新草稿，保存特殊日期设置后才生效到日历'
+    : '快速开关模式已关闭');
 });
 
 initializeWorkbenchView();

@@ -1,4 +1,9 @@
 import type { FastifyPluginAsync } from 'fastify';
+import {
+  formatClosedDateRange,
+  getCalendarRuleState,
+  groupClosedDatesIntoRanges
+} from './availabilityWorkbench.js';
 
 const TABLER_VERSION = '1.4.0';
 
@@ -535,13 +540,13 @@ function renderDocument(title: string, body: string, script: string): string {
     }
 
     .day-cell {
-      min-height: 118px;
+      min-height: 88px;
       border-radius: 1rem;
       border: 1px solid rgba(15, 23, 42, 0.08);
       padding: 0.65rem;
       display: flex;
       flex-direction: column;
-      justify-content: space-between;
+      justify-content: flex-start;
       gap: 0.4rem;
       background: rgba(255, 255, 255, 0.9);
       transition: transform 0.16s ease, box-shadow 0.16s ease;
@@ -595,26 +600,14 @@ function renderDocument(title: string, body: string, script: string): string {
     }
 
     .day-number {
-      font-size: 1rem;
+      font-size: 1.2rem;
       font-weight: 800;
       line-height: 1;
     }
 
     .day-emoji {
-      font-size: 1.2rem;
+      font-size: 1.05rem;
       line-height: 1;
-    }
-
-    .day-status {
-      font-size: 0.78rem;
-      font-weight: 700;
-      line-height: 1.2;
-    }
-
-    .day-reason {
-      font-size: 0.72rem;
-      color: var(--tblr-secondary);
-      line-height: 1.25;
     }
 
     .calendar-legend {
@@ -670,8 +663,27 @@ function renderDocument(title: string, body: string, script: string): string {
     }
 
     @media (max-width: 767.98px) {
+      .month-card {
+        padding: 0.75rem;
+      }
+
+      .weekdays-row,
+      .days-grid {
+        gap: 0.35rem;
+      }
+
       .day-cell {
-        min-height: 98px;
+        min-height: 72px;
+        padding: 0.5rem 0.45rem;
+        border-radius: 0.85rem;
+      }
+
+      .day-number {
+        font-size: 1rem;
+      }
+
+      .day-emoji {
+        font-size: 0.95rem;
       }
     }
 
@@ -1830,7 +1842,7 @@ function availabilityWorkbenchPage(id: string, timezone: string): string {
                 <div class="d-flex gap-2">
                   <button id="saveAdvanceCloseRule" class="btn btn-primary" type="button">保存提前停售</button>
                 </div>
-                <div class="text-secondary small">单选切换后会实时预演，点击按钮后保存到规则。</div>
+                <div class="text-secondary small">修改后不会立即作用到日历，点击保存后才会生效。</div>
               </div>
             </div>
           </div>
@@ -1915,7 +1927,7 @@ function availabilityWorkbenchPage(id: string, timezone: string): string {
           <div class="card-header">
             <div>
               <h3 class="card-title">日历预演</h3>
-              <div class="text-secondary small">周一为第一列。规则修改后会立刻反映在下面的月历中。</div>
+              <div class="text-secondary small">周一为第一列。月历只显示已保存规则，点击各自保存按钮后才会更新。</div>
             </div>
             <div class="ms-auto d-flex gap-2">
               <button id="calendarPrev" class="btn btn-outline-secondary" type="button">上一月</button>
@@ -1951,7 +1963,10 @@ function availabilityWorkbenchPage(id: string, timezone: string): string {
     </div>`
   });
 
-  const script = sharedScript(`
+const script = sharedScript(`
+const getCalendarRuleState = ${getCalendarRuleState.toString()};
+const groupClosedDatesIntoRanges = ${groupClosedDatesIntoRanges.toString()};
+const formatClosedDateRange = ${formatClosedDateRange.toString()};
 const PRODUCT_ID = ${JSON.stringify(id)};
 const PRODUCT_TIMEZONE = ${JSON.stringify(timezone)};
 const WEEKDAY_LABELS = ['周一', '周二', '周三', '周四', '周五', '周六', '周日'];
@@ -2067,13 +2082,14 @@ function renderSelectedClosedDates() {
     container.innerHTML = '<span class="text-secondary small">当前没有手动关闭日期</span>';
     return;
   }
-  draftRuleState.closedDates.forEach((dateStr) => {
+  groupClosedDatesIntoRanges(draftRuleState.closedDates).forEach((range) => {
     const badge = document.createElement('button');
     badge.type = 'button';
     badge.className = 'btn btn-sm btn-outline-danger';
-    badge.textContent = '🔴 ' + dateStr;
+    badge.textContent = '🔴 ' + formatClosedDateRange(range);
     badge.addEventListener('click', () => {
-      draftRuleState.closedDates = draftRuleState.closedDates.filter((item) => item !== dateStr);
+      const rangeDates = new Set(range.dates);
+      draftRuleState.closedDates = draftRuleState.closedDates.filter((item) => !rangeDates.has(item));
       renderSelectedClosedDates();
       renderWorkbench();
     });
@@ -2081,7 +2097,7 @@ function renderSelectedClosedDates() {
   });
 }
 
-function getDateStatus(dateStr) {
+function getDateStatus(dateStr, ruleState) {
   const today = todayInProductTimeZone();
   const reasons = [];
 
@@ -2089,18 +2105,18 @@ function getDateStatus(dateStr) {
     return { key: 'past', emoji: '⬜', label: '过去', reason: '过去日期', reasons };
   }
 
-  if (draftRuleState.closedDates.includes(dateStr)) {
+  if (ruleState.closedDates.includes(dateStr)) {
     reasons.push('手动关闭');
     return { key: 'manual-closed', emoji: '🔴', label: '关闭', reason: '手动关闭', reasons };
   }
 
-  if (draftRuleState.advanceCloseDays > 0 && diffDays(today, dateStr) < draftRuleState.advanceCloseDays) {
-    reasons.push('提前' + draftRuleState.advanceCloseDays + '天停售');
+  if (ruleState.advanceCloseDays > 0 && diffDays(today, dateStr) < ruleState.advanceCloseDays) {
+    reasons.push('提前' + ruleState.advanceCloseDays + '天停售');
     return { key: 'advance-closed', emoji: '⏳', label: '停售', reason: '提前关闭', reasons };
   }
 
   const weekday = weekdayMonFirst(dateStr);
-  if (draftRuleState.weeklyClosedDays.includes(weekday)) {
+  if (ruleState.weeklyClosedDays.includes(weekday)) {
     reasons.push(WEEKDAY_LABELS[weekday - 1] + '关闭');
     return { key: 'weekly-closed', emoji: '🔁', label: '周关闭', reason: WEEKDAY_LABELS[weekday - 1], reasons };
   }
@@ -2110,15 +2126,16 @@ function getDateStatus(dateStr) {
 }
 
 function renderSummary() {
+  const calendarRuleState = getCalendarRuleState(savedRuleState, draftRuleState);
   const summary = document.getElementById('availabilitySummary');
-  const weeklyText = draftRuleState.weeklyClosedDays.length
-    ? draftRuleState.weeklyClosedDays.map((day) => WEEKDAY_LABELS[day - 1]).join(' / ')
+  const weeklyText = calendarRuleState.weeklyClosedDays.length
+    ? calendarRuleState.weeklyClosedDays.map((day) => WEEKDAY_LABELS[day - 1]).join(' / ')
     : '无';
   summary.innerHTML =
     '<span class="badge bg-green-lt text-green">🟢 默认可售</span>' +
-    '<span class="badge bg-orange-lt text-orange">⏳ 提前关闭 ' + draftRuleState.advanceCloseDays + ' 天</span>' +
+    '<span class="badge bg-orange-lt text-orange">⏳ 提前关闭 ' + calendarRuleState.advanceCloseDays + ' 天</span>' +
     '<span class="badge bg-azure-lt text-azure">📅 每周关闭 ' + escapeText(weeklyText) + '</span>' +
-    '<span class="badge bg-red-lt text-red">🔴 手动关闭 ' + draftRuleState.closedDates.length + ' 天</span>';
+    '<span class="badge bg-red-lt text-red">🔴 手动关闭 ' + calendarRuleState.closedDates.length + ' 天</span>';
 }
 
 function buildMonthCells(anchor) {
@@ -2140,7 +2157,7 @@ function buildMonthCells(anchor) {
 }
 
 function openDayDetail(dateStr) {
-  const status = getDateStatus(dateStr);
+  const status = getDateStatus(dateStr, getCalendarRuleState(savedRuleState, draftRuleState));
   const today = todayInProductTimeZone();
   document.getElementById('dayDetailTitle').textContent = dateStr;
   document.getElementById('dayDetailBody').innerHTML =
@@ -2171,10 +2188,11 @@ function renderCalendarMonth(anchor, index) {
   const month = document.createElement('div');
   month.className = 'month-card';
   const today = todayInProductTimeZone();
+  const calendarRuleState = getCalendarRuleState(savedRuleState, draftRuleState);
   const cells = buildMonthCells(anchor);
   const weekdays = WEEKDAY_LABELS.map((label) => '<div class="weekday-label">' + label.slice(1) + '</div>').join('');
   const days = cells.map((cell) => {
-    const status = getDateStatus(cell.dateStr);
+    const status = getDateStatus(cell.dateStr, calendarRuleState);
     const classes = [
       'day-cell',
       'is-' + status.key,
@@ -2182,9 +2200,7 @@ function renderCalendarMonth(anchor, index) {
       cell.dateStr === today ? 'is-today' : ''
     ].filter(Boolean).join(' ');
     return '<button type="button" class="' + classes + '" data-date="' + cell.dateStr + '" ' + (cell.isCurrentMonth ? '' : 'disabled') + '>' +
-      '<div class="day-topline"><div class="day-number">' + Number(cell.dateStr.slice(-2)) + '</div><div class="day-emoji">' + status.emoji + '</div></div>' +
-      '<div class="day-status">' + status.label + (cell.dateStr === today ? ' · Today' : '') + '</div>' +
-      '<div class="day-reason">' + escapeText(status.reason) + '</div>' +
+      '<div class="day-topline"><div class="day-number">' + Number(cell.dateStr.slice(-2)) + '</div><div class="day-emoji" aria-label="' + escapeText(status.label + (cell.dateStr === today ? ' Today' : '')) + '">' + status.emoji + '</div></div>' +
       '</button>';
   }).join('');
 

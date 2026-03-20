@@ -1,6 +1,7 @@
 import type { FastifyPluginAsync } from 'fastify';
 import {
   formatClosedDateRange,
+  getDayOverrideAction,
   getVisibleCalendarOffsets,
   getCalendarRuleState,
   groupClosedDatesIntoRanges
@@ -596,25 +597,38 @@ function renderDocument(title: string, body: string, script: string): string {
 
     .day-topline {
       display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 0.2rem;
-      min-width: 0;
+      flex-direction: column;
+      align-items: flex-start;
+      justify-content: flex-start;
+      gap: 0.18rem;
     }
 
     .day-number {
       font-size: 1.2rem;
       font-weight: 800;
       line-height: 1;
-      flex: 1 1 auto;
-      min-width: 0;
     }
 
     .day-emoji {
       font-size: 1.05rem;
       line-height: 1;
-      flex: 0 0 auto;
-      transform: translateY(-0.02rem);
+    }
+
+    .day-detail-state {
+      border-radius: 1rem;
+      padding: 0.9rem 1rem;
+      background: rgba(248, 250, 252, 0.9);
+      border: 1px solid rgba(15, 23, 42, 0.08);
+    }
+
+    .day-detail-state .detail-emoji {
+      font-size: 1.15rem;
+      line-height: 1;
+    }
+
+    html[data-bs-theme='dark'] .day-detail-state {
+      background: rgba(15, 23, 42, 0.72);
+      border-color: rgba(148, 163, 184, 0.12);
     }
 
     .calendar-legend {
@@ -686,7 +700,7 @@ function renderDocument(title: string, body: string, script: string): string {
       }
 
       .day-topline {
-        gap: 0.12rem;
+        gap: 0.1rem;
       }
 
       .day-number {
@@ -1960,16 +1974,20 @@ function availabilityWorkbenchPage(id: string, timezone: string): string {
       </div>
     </div>
 
-    <div class="offcanvas offcanvas-end" tabindex="-1" id="dayDetailOffcanvas" aria-labelledby="dayDetailTitle">
-      <div class="offcanvas-header">
-        <div>
-          <div class="text-uppercase text-secondary fw-bold small">Date Detail</div>
-          <h2 class="offcanvas-title" id="dayDetailTitle">选择某一天</h2>
+    <div class="modal fade" id="dayDetailModal" tabindex="-1" aria-labelledby="dayDetailTitle" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-header">
+            <div>
+              <div class="text-uppercase text-secondary fw-bold small">Date Detail</div>
+              <h2 class="modal-title h3 mb-0" id="dayDetailTitle">选择某一天</h2>
+            </div>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <div id="dayDetailBody" class="d-grid gap-3 text-secondary">点击日历中的某一天查看状态解释。</div>
+          </div>
         </div>
-        <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
-      </div>
-      <div class="offcanvas-body">
-        <div id="dayDetailBody" class="d-grid gap-3 text-secondary">点击日历中的某一天查看状态解释。</div>
       </div>
     </div>`
   });
@@ -1979,6 +1997,7 @@ const getCalendarRuleState = ${getCalendarRuleState.toString()};
 const groupClosedDatesIntoRanges = ${groupClosedDatesIntoRanges.toString()};
 const formatClosedDateRange = ${formatClosedDateRange.toString()};
 const getVisibleCalendarOffsets = ${getVisibleCalendarOffsets.toString()};
+const getDayOverrideAction = ${getDayOverrideAction.toString()};
 const PRODUCT_ID = ${JSON.stringify(id)};
 const PRODUCT_TIMEZONE = ${JSON.stringify(timezone)};
 const WEEKDAY_LABELS = ['周一', '周二', '周三', '周四', '周五', '周六', '周日'];
@@ -2169,31 +2188,33 @@ function buildMonthCells(anchor) {
 }
 
 function openDayDetail(dateStr) {
-  const status = getDateStatus(dateStr, getCalendarRuleState(savedRuleState, draftRuleState));
+  const calendarRuleState = getCalendarRuleState(savedRuleState, draftRuleState);
+  const status = getDateStatus(dateStr, calendarRuleState);
+  const actionConfig = getDayOverrideAction(dateStr, draftRuleState.closedDates);
   const today = todayInProductTimeZone();
   document.getElementById('dayDetailTitle').textContent = dateStr;
   document.getElementById('dayDetailBody').innerHTML =
-    '<div class="h3 mb-0">' + status.emoji + ' ' + status.label + '</div>' +
+    '<div class="day-detail-state d-grid gap-2">' +
+      '<div class="d-flex align-items-center gap-2"><span class="detail-emoji">' + status.emoji + '</span><span class="h4 mb-0">' + status.label + '</span></div>' +
+      '<div><strong>状态：</strong> ' + escapeText(status.label) + '</div>' +
+      '<div><strong>原因：</strong> ' + escapeText(status.reason) + '</div>' +
+    '</div>' +
     '<div class="text-secondary">今天：' + today + '</div>' +
-    '<div><strong>状态原因：</strong> ' + escapeText(status.reason) + '</div>' +
-    '<div><strong>规则命中：</strong> ' + escapeText(status.reasons.join('，') || '无') + '</div>' +
-    '<div class="d-flex gap-2"><button id="closeSingleDate" class="btn btn-outline-danger" type="button">关闭当天</button><button id="openSingleDate" class="btn btn-outline-primary" type="button">恢复可售</button></div>';
+    '<div><strong>逻辑命中：</strong> ' + escapeText(status.reasons.join('，') || '无') + '</div>' +
+    '<button id="toggleSingleDate" class="' + actionConfig.buttonClassName + '" type="button">' + actionConfig.label + '</button>';
 
-  document.getElementById('closeSingleDate').addEventListener('click', () => {
-    if (!draftRuleState.closedDates.includes(dateStr)) {
+  document.getElementById('toggleSingleDate').addEventListener('click', () => {
+    if (actionConfig.action === 'open') {
+      draftRuleState.closedDates = draftRuleState.closedDates.filter((item) => item !== dateStr);
+    } else if (!draftRuleState.closedDates.includes(dateStr)) {
       draftRuleState.closedDates = draftRuleState.closedDates.concat(dateStr).sort();
-      renderSelectedClosedDates();
-      renderWorkbench();
     }
-  });
-
-  document.getElementById('openSingleDate').addEventListener('click', () => {
-    draftRuleState.closedDates = draftRuleState.closedDates.filter((item) => item !== dateStr);
     renderSelectedClosedDates();
     renderWorkbench();
+    window.bootstrap.Modal.getOrCreateInstance(document.getElementById('dayDetailModal')).hide();
   });
 
-  window.bootstrap.Offcanvas.getOrCreateInstance(document.getElementById('dayDetailOffcanvas')).show();
+  window.bootstrap.Modal.getOrCreateInstance(document.getElementById('dayDetailModal')).show();
 }
 
 function renderCalendarMonth(anchor, index) {

@@ -68,3 +68,23 @@ export function formatClosedDateRange(range: ClosedDateRange): string {
 export function getVisibleCalendarOffsets(calendarOffset: number, monthCount = 4): number[] {
   return Array.from({ length: monthCount }, (_, index) => calendarOffset + index);
 }
+
+export function getDayOverrideAction(dateStr: string, closedDates: string[]): {
+  action: 'open' | 'close';
+  label: string;
+  buttonClassName: string;
+} {
+  if (closedDates.includes(dateStr)) {
+    return {
+      action: 'open',
+      label: '打开当天日历',
+      buttonClassName: 'btn btn-primary'
+    };
+  }
+
+  return {
+    action: 'close',
+    label: '关闭当天日历',
+    buttonClassName: 'btn btn-danger'
+  };
+}

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   formatClosedDateRange,
+  getDayOverrideAction,
   getVisibleCalendarOffsets,
   getCalendarRuleState,
   groupClosedDatesIntoRanges,
@@ -43,5 +44,19 @@ describe('availability workbench helpers', () => {
   it('shows four calendar months by default from the current offset', () => {
     expect(getVisibleCalendarOffsets(0)).toEqual([0, 1, 2, 3]);
     expect(getVisibleCalendarOffsets(2)).toEqual([2, 3, 4, 5]);
+  });
+
+  it('uses one primary day action in the detail modal based on manual override state', () => {
+    expect(getDayOverrideAction('2026-03-27', ['2026-03-27'])).toEqual({
+      action: 'open',
+      label: '打开当天日历',
+      buttonClassName: 'btn btn-primary'
+    });
+
+    expect(getDayOverrideAction('2026-03-27', ['2026-03-28'])).toEqual({
+      action: 'close',
+      label: '关闭当天日历',
+      buttonClassName: 'btn btn-danger'
+    });
   });
 });

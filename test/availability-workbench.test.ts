@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   formatClosedDateRange,
+  getVisibleCalendarOffsets,
   getCalendarRuleState,
   groupClosedDatesIntoRanges,
   type AvailabilityRuleState
@@ -37,5 +38,10 @@ describe('availability workbench helpers', () => {
         '2026-03-31'
       ]).map(formatClosedDateRange)
     ).toEqual(['2026-03-24 ~ 2026-03-26', '2026-03-28', '2026-03-30 ~ 2026-03-31']);
+  });
+
+  it('shows four calendar months by default from the current offset', () => {
+    expect(getVisibleCalendarOffsets(0)).toEqual([0, 1, 2, 3]);
+    expect(getVisibleCalendarOffsets(2)).toEqual([2, 3, 4, 5]);
   });
 });

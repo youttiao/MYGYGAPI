@@ -64,3 +64,7 @@ export function groupClosedDatesIntoRanges(closedDates: string[]): ClosedDateRan
 export function formatClosedDateRange(range: ClosedDateRange): string {
   return range.from === range.to ? range.from : `${range.from} ~ ${range.to}`;
 }
+
+export function getVisibleCalendarOffsets(calendarOffset: number, monthCount = 4): number[] {
+  return Array.from({ length: monthCount }, (_, index) => calendarOffset + index);
+}

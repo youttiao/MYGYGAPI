@@ -1,6 +1,7 @@
 import type { FastifyPluginAsync } from 'fastify';
 import {
   formatClosedDateRange,
+  getVisibleCalendarOffsets,
   getCalendarRuleState,
   groupClosedDatesIntoRanges
 } from './availabilityWorkbench.js';
@@ -503,6 +504,7 @@ function renderDocument(title: string, body: string, script: string): string {
       display: grid;
       grid-template-columns: repeat(2, minmax(0, 1fr));
       gap: 1rem;
+      align-items: start;
     }
 
     .month-card {
@@ -594,20 +596,25 @@ function renderDocument(title: string, body: string, script: string): string {
 
     .day-topline {
       display: flex;
-      align-items: flex-start;
+      align-items: center;
       justify-content: space-between;
-      gap: 0.35rem;
+      gap: 0.2rem;
+      min-width: 0;
     }
 
     .day-number {
       font-size: 1.2rem;
       font-weight: 800;
       line-height: 1;
+      flex: 1 1 auto;
+      min-width: 0;
     }
 
     .day-emoji {
       font-size: 1.05rem;
       line-height: 1;
+      flex: 0 0 auto;
+      transform: translateY(-0.02rem);
     }
 
     .calendar-legend {
@@ -676,6 +683,10 @@ function renderDocument(title: string, body: string, script: string): string {
         min-height: 72px;
         padding: 0.5rem 0.45rem;
         border-radius: 0.85rem;
+      }
+
+      .day-topline {
+        gap: 0.12rem;
       }
 
       .day-number {
@@ -1967,6 +1978,7 @@ const script = sharedScript(`
 const getCalendarRuleState = ${getCalendarRuleState.toString()};
 const groupClosedDatesIntoRanges = ${groupClosedDatesIntoRanges.toString()};
 const formatClosedDateRange = ${formatClosedDateRange.toString()};
+const getVisibleCalendarOffsets = ${getVisibleCalendarOffsets.toString()};
 const PRODUCT_ID = ${JSON.stringify(id)};
 const PRODUCT_TIMEZONE = ${JSON.stringify(timezone)};
 const WEEKDAY_LABELS = ['周一', '周二', '周三', '周四', '周五', '周六', '周日'];
@@ -2214,7 +2226,7 @@ function renderCalendarMonth(anchor, index) {
 function renderCalendar() {
   const shell = document.getElementById('calendarShell');
   shell.innerHTML = '';
-  [calendarOffset, calendarOffset + 1].forEach((offset, index) => {
+  getVisibleCalendarOffsets(calendarOffset).forEach((offset, index) => {
     shell.appendChild(renderCalendarMonth(monthAnchor(offset), index));
   });
   shell.querySelectorAll('.day-cell[data-date]').forEach((button) => {

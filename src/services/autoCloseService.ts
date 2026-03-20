@@ -17,9 +17,9 @@ export class AutoCloseService {
   start() {
     this.stop();
     this.timer = setInterval(() => {
-      void this.runOnce();
+      void this.runSafely();
     }, this.intervalMs);
-    void this.runOnce();
+    void this.runSafely();
   }
 
   stop() {
@@ -54,6 +54,14 @@ export class AutoCloseService {
 
     if (updated > 0) {
       this.logger.info({ updated }, 'availability_auto_closed');
+    }
+  }
+
+  private async runSafely() {
+    try {
+      await this.runOnce();
+    } catch (error) {
+      this.logger.error({ err: error }, 'availability_auto_close_failed');
     }
   }
 }

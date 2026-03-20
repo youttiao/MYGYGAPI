@@ -1,6 +1,7 @@
 import type { FastifyPluginAsync } from 'fastify';
 import {
   formatClosedDateRange,
+  hasBootstrapModalApi,
   getDayOverrideAction,
   getVisibleCalendarOffsets,
   getCalendarRuleState,
@@ -629,6 +630,13 @@ function renderDocument(title: string, body: string, script: string): string {
     html[data-bs-theme='dark'] .day-detail-state {
       background: rgba(15, 23, 42, 0.72);
       border-color: rgba(148, 163, 184, 0.12);
+    }
+
+    .manual-modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.55);
+      z-index: 1050;
     }
 
     .calendar-legend {
@@ -1982,7 +1990,7 @@ function availabilityWorkbenchPage(id: string, timezone: string): string {
               <div class="text-uppercase text-secondary fw-bold small">Date Detail</div>
               <h2 class="modal-title h3 mb-0" id="dayDetailTitle">选择某一天</h2>
             </div>
-            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            <button id="closeDayDetailModal" type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
           </div>
           <div class="modal-body">
             <div id="dayDetailBody" class="d-grid gap-3 text-secondary">点击日历中的某一天查看状态解释。</div>
@@ -1998,6 +2006,7 @@ const groupClosedDatesIntoRanges = ${groupClosedDatesIntoRanges.toString()};
 const formatClosedDateRange = ${formatClosedDateRange.toString()};
 const getVisibleCalendarOffsets = ${getVisibleCalendarOffsets.toString()};
 const getDayOverrideAction = ${getDayOverrideAction.toString()};
+const hasBootstrapModalApi = ${hasBootstrapModalApi.toString()};
 const PRODUCT_ID = ${JSON.stringify(id)};
 const PRODUCT_TIMEZONE = ${JSON.stringify(timezone)};
 const WEEKDAY_LABELS = ['周一', '周二', '周三', '周四', '周五', '周六', '周日'];
@@ -2013,6 +2022,7 @@ let draftRuleState = {
   closedDates: []
 };
 let calendarOffset = 0;
+let manualDayDetailBackdrop = null;
 
 function print(value) {
   appendLog(value);
@@ -2128,6 +2138,46 @@ function renderSelectedClosedDates() {
   });
 }
 
+function showDayDetailModal() {
+  const modalElement = document.getElementById('dayDetailModal');
+  if (hasBootstrapModalApi(window.bootstrap)) {
+    window.bootstrap.Modal.getOrCreateInstance(modalElement).show();
+    return;
+  }
+
+  modalElement.style.display = 'block';
+  modalElement.classList.add('show');
+  modalElement.removeAttribute('aria-hidden');
+  modalElement.setAttribute('aria-modal', 'true');
+  document.body.classList.add('modal-open');
+
+  if (!manualDayDetailBackdrop) {
+    manualDayDetailBackdrop = document.createElement('div');
+    manualDayDetailBackdrop.className = 'modal-backdrop fade show manual-modal-backdrop';
+    manualDayDetailBackdrop.addEventListener('click', hideDayDetailModal);
+  }
+
+  document.body.appendChild(manualDayDetailBackdrop);
+}
+
+function hideDayDetailModal() {
+  const modalElement = document.getElementById('dayDetailModal');
+  if (hasBootstrapModalApi(window.bootstrap)) {
+    window.bootstrap.Modal.getOrCreateInstance(modalElement).hide();
+    return;
+  }
+
+  modalElement.classList.remove('show');
+  modalElement.style.display = 'none';
+  modalElement.setAttribute('aria-hidden', 'true');
+  modalElement.removeAttribute('aria-modal');
+  document.body.classList.remove('modal-open');
+
+  if (manualDayDetailBackdrop && manualDayDetailBackdrop.parentNode) {
+    manualDayDetailBackdrop.parentNode.removeChild(manualDayDetailBackdrop);
+  }
+}
+
 function getDateStatus(dateStr, ruleState) {
   const today = todayInProductTimeZone();
   const reasons = [];
@@ -2211,10 +2261,10 @@ function openDayDetail(dateStr) {
     }
     renderSelectedClosedDates();
     renderWorkbench();
-    window.bootstrap.Modal.getOrCreateInstance(document.getElementById('dayDetailModal')).hide();
+    hideDayDetailModal();
   });
 
-  window.bootstrap.Modal.getOrCreateInstance(document.getElementById('dayDetailModal')).show();
+  showDayDetailModal();
 }
 
 function renderCalendarMonth(anchor, index) {
@@ -2382,6 +2432,7 @@ document.getElementById('calendarToday').addEventListener('click', () => {
   calendarOffset = 0;
   renderCalendar();
 });
+document.getElementById('closeDayDetailModal').addEventListener('click', hideDayDetailModal);
 
 initializeWorkbenchView();
 

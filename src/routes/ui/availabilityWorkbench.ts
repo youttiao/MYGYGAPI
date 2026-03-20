@@ -88,3 +88,12 @@ export function getDayOverrideAction(dateStr: string, closedDates: string[]): {
     buttonClassName: 'btn btn-danger'
   };
 }
+
+export function hasBootstrapModalApi(bootstrapRuntime: unknown): boolean {
+  if (!bootstrapRuntime || typeof bootstrapRuntime !== 'object') {
+    return false;
+  }
+
+  const modal = (bootstrapRuntime as { Modal?: { getOrCreateInstance?: unknown } }).Modal;
+  return Boolean(modal && typeof modal.getOrCreateInstance === 'function');
+}

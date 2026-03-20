@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   formatClosedDateRange,
+  hasBootstrapModalApi,
   getDayOverrideAction,
   getVisibleCalendarOffsets,
   getCalendarRuleState,
@@ -58,5 +59,12 @@ describe('availability workbench helpers', () => {
       label: '关闭当天日历',
       buttonClassName: 'btn btn-danger'
     });
+  });
+
+  it('detects whether the bootstrap modal api is safely available', () => {
+    expect(hasBootstrapModalApi(undefined)).toBe(false);
+    expect(hasBootstrapModalApi({})).toBe(false);
+    expect(hasBootstrapModalApi({ Modal: {} })).toBe(false);
+    expect(hasBootstrapModalApi({ Modal: { getOrCreateInstance: () => ({}) } })).toBe(true);
   });
 });

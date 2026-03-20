@@ -90,6 +90,7 @@ export class ProductService {
       groupSizeMin?: number;
       groupSizeMax?: number;
       pricingMode?: 'MANUAL_IN_GYG' | 'PRICE_OVER_API';
+      supportedCategories?: string[];
     }
   ) {
     return this.repo.updateSettings(id, settings);

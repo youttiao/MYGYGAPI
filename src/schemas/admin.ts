@@ -140,7 +140,8 @@ export const adminProductSettingsBodySchema = z
     participantsMax: z.number().int().positive().optional(),
     groupSizeMin: z.number().int().positive().optional(),
     groupSizeMax: z.number().int().positive().optional(),
-    pricingMode: z.enum(['MANUAL_IN_GYG', 'PRICE_OVER_API']).optional()
+    pricingMode: z.enum(['MANUAL_IN_GYG', 'PRICE_OVER_API']).optional(),
+    supportedCategories: z.array(z.string().min(1)).optional()
   })
   .refine(
     (value) =>
@@ -149,7 +150,8 @@ export const adminProductSettingsBodySchema = z
       value.participantsMax !== undefined ||
       value.groupSizeMin !== undefined ||
       value.groupSizeMax !== undefined ||
-      value.pricingMode !== undefined,
+      value.pricingMode !== undefined ||
+      value.supportedCategories !== undefined,
     { message: 'At least one settings field must be provided' }
   );
 

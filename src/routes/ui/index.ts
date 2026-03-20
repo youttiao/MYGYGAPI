@@ -2237,6 +2237,28 @@ function renderSelectedClosedDates() {
   });
 }
 
+async function persistSingleDateOverride(nextDraftState, savingMessage, successMessage) {
+  const previousDraftState = JSON.parse(JSON.stringify(draftRuleState));
+  draftRuleState = nextDraftState;
+  renderSelectedClosedDates();
+  renderWorkbench();
+  showSaveFeedback('specialDatesFeedback', 'idle', savingMessage);
+
+  try {
+    await saveRules({
+      closedDates: prunePastDates(draftRuleState.closedDates, todayInProductTimeZone()),
+      openedDates: prunePastDates(draftRuleState.openedDates, todayInProductTimeZone())
+    });
+    showSaveFeedback('specialDatesFeedback', 'success', successMessage);
+  } catch (error) {
+    draftRuleState = previousDraftState;
+    renderSelectedClosedDates();
+    renderWorkbench();
+    print(String(error));
+    showSaveFeedback('specialDatesFeedback', 'error', String(error));
+  }
+}
+
 function showDayDetailModal() {
   const modalElement = document.getElementById('dayDetailModal');
   if (hasBootstrapModalApi(window.bootstrap)) {
@@ -2404,20 +2426,22 @@ function openDayDetail(dateStr) {
     '</div>';
 
   document.getElementById('primaryToggleSingleDate').addEventListener('click', () => {
-    draftRuleState = applyDateOverrideMode(dateStr, draftRuleState, actionConfig.targetMode);
-    renderSelectedClosedDates();
-    renderWorkbench();
-    showSaveFeedback('specialDatesFeedback', 'idle', '草稿已更新，点击保存特殊日期设置后生效到日历');
+    persistSingleDateOverride(
+      applyDateOverrideMode(dateStr, draftRuleState, actionConfig.targetMode),
+      '正在保存当天状态...',
+      '当天状态已保存并生效'
+    );
     hideDayDetailModal();
   });
 
   const followButton = document.getElementById('followRulesSingleDate');
   if (followButton) {
     followButton.addEventListener('click', () => {
-      draftRuleState = applyDateOverrideMode(dateStr, draftRuleState, 'follow-rules');
-      renderSelectedClosedDates();
-      renderWorkbench();
-      showSaveFeedback('specialDatesFeedback', 'idle', '草稿已更新，点击保存特殊日期设置后生效到日历');
+      persistSingleDateOverride(
+        applyDateOverrideMode(dateStr, draftRuleState, 'follow-rules'),
+        '正在恢复当天跟随规律...',
+        '当天已恢复为遵循规律'
+      );
       hideDayDetailModal();
     });
   }
@@ -2463,10 +2487,11 @@ function renderCalendar() {
       const dateStr = button.getAttribute('data-date');
       if (quickToggleCalendarMode) {
         const currentMode = getDateOverrideMode(dateStr, draftRuleState.closedDates, draftRuleState.openedDates);
-        draftRuleState = applyDateOverrideMode(dateStr, draftRuleState, getNextDateOverrideMode(currentMode));
-        renderSelectedClosedDates();
-        renderWorkbench();
-        showSaveFeedback('specialDatesFeedback', 'idle', '草稿已更新，点击保存特殊日期设置后生效到日历');
+        persistSingleDateOverride(
+          applyDateOverrideMode(dateStr, draftRuleState, getNextDateOverrideMode(currentMode)),
+          '正在快速保存日期状态...',
+          '日期状态已快速保存并生效'
+        );
         return;
       }
       openDayDetail(dateStr);
@@ -2673,7 +2698,7 @@ document.getElementById('closeDayDetailModal').addEventListener('click', hideDay
 document.getElementById('quickToggleCalendarMode').addEventListener('change', (event) => {
   quickToggleCalendarMode = event.target.checked;
   showSaveFeedback('specialDatesFeedback', 'idle', quickToggleCalendarMode
-    ? '快速开关模式已开启，点击日期只更新草稿，保存特殊日期设置后才生效到日历'
+    ? '快速开关模式已开启，点击日期会直接保存并立即生效'
     : '快速开关模式已关闭');
 });
 
@@ -2694,7 +2719,7 @@ function calendarPage(id: string, timezone: string): string {
     activeNav: 'products',
     pretitle: 'Product Detail',
     title: '商品详情页',
-    description: '这里先套用 Tabler 风格，核心日历、addons、推送 GYG 的现有功能先保留。',
+    description: '这里集中维护产品信息配置、售卖人群配置和 Addons。',
     actions: `<div class="d-flex gap-2"><a class="btn btn-outline-primary" href="/products/${safeId}">Availability 工作台</a><a class="btn btn-outline-secondary" href="/">返回商品列表</a></div>`,
     content: `<div class="row row-cards">
       <div class="col-12">
@@ -2736,74 +2761,24 @@ function calendarPage(id: string, timezone: string): string {
         </div>
       </div>
 
-      <div class="col-12 col-xl-4">
+      <div class="col-12 col-xl-7">
         <div class="card">
           <div class="card-header">
-            <h3 class="card-title">查询日历</h3>
+            <h3 class="card-title">产品信息配置</h3>
           </div>
-          <div class="card-body d-grid gap-3">
-            <label class="form-label mb-0">
-              <span class="form-label-description">开始日期</span>
-              <input id="fromDate" type="date" class="form-control" />
-            </label>
-            <label class="form-label mb-0">
-              <span class="form-label-description">结束日期</span>
-              <input id="toDate" type="date" class="form-control" />
-            </label>
-            <label class="form-label mb-0">
-              <span class="form-label-description">时区偏移</span>
-              <input id="tz" class="form-control" value="+08:00" />
-            </label>
-            <div class="d-grid gap-2">
-              <button id="load" class="btn btn-primary" type="button">查询日历</button>
-              <button id="quick7" class="btn btn-outline-primary" type="button">近 7 天</button>
-              <button id="quick30" class="btn btn-outline-primary" type="button">近 30 天</button>
-              <button id="pushToGyg" class="btn btn-outline-secondary" type="button">推送到 GYG Sandbox</button>
-            </div>
-          </div>
-        </div>
-
-        <div class="card mt-3">
-          <div class="card-header">
-            <h3 class="card-title">商品设置</h3>
-          </div>
-          <div class="card-body d-grid gap-3">
-            <label class="form-label mb-0">
-              <span class="form-label-description">自动关闭提前小时</span>
-              <input id="autoCloseHours" type="number" min="0" value="0" class="form-control" />
-            </label>
-            <label class="form-label mb-0">
-              <span class="form-label-description">participantsMin</span>
-              <input id="participantsMin" type="number" min="1" value="1" class="form-control" />
-            </label>
-            <label class="form-label mb-0">
-              <span class="form-label-description">participantsMax</span>
-              <input id="participantsMax" type="number" min="1" value="999" class="form-control" />
-            </label>
-            <label class="form-label mb-0">
-              <span class="form-label-description">groupSizeMin</span>
-              <input id="groupSizeMin" type="number" min="1" class="form-control" />
-            </label>
-            <label class="form-label mb-0">
-              <span class="form-label-description">groupSizeMax</span>
-              <input id="groupSizeMax" type="number" min="1" class="form-control" />
-            </label>
-            <button id="saveAutoClose" class="btn btn-outline-primary" type="button">保存自动关闭设置</button>
-            <button id="saveBookingRules" class="btn btn-outline-primary" type="button">保存预订规则</button>
-          </div>
-        </div>
-      </div>
-
-      <div class="col-12 col-xl-8">
-        <div class="card">
-          <div class="card-header">
-            <h3 class="card-title">批量写入价格与库存</h3>
-          </div>
-          <div class="card-body">
+          <div class="card-body d-grid gap-4">
             <div class="row g-3">
               <div class="col-md-4">
                 <label class="form-label">可用性类型</label>
                 <input id="availabilityModeLabel" class="form-control" readonly />
+              </div>
+              <div class="col-md-4">
+                <label class="form-label">价格模式</label>
+                <input id="pricingModeLabel" class="form-control" readonly />
+              </div>
+              <div class="col-md-4">
+                <label class="form-label">商品币种</label>
+                <input id="currencyLabel" class="form-control" readonly />
               </div>
               <div class="col-md-4">
                 <label class="form-label">开始日期</label>
@@ -2814,98 +2789,89 @@ function calendarPage(id: string, timezone: string): string {
                 <input id="saveToDate" type="date" class="form-control" />
               </div>
               <div class="col-md-4">
-                <label class="form-label">库存 vacancies</label>
-                <input id="vacancies" type="number" value="20" class="form-control" />
-              </div>
-              <div class="col-md-8" id="timePointBlock">
-                <label class="form-label">开始时间，逗号分隔</label>
-                <input id="saveTimes" value="10:00,14:00" class="form-control" />
-              </div>
-              <div class="col-md-8" id="timePeriodBlock">
-                <label class="form-label">openingTimes，例 09:00-12:00,14:00-18:00</label>
-                <input id="openingRanges" value="09:00-12:00,14:00-18:00" class="form-control" />
-              </div>
-            </div>
-
-            <hr class="my-4" />
-
-            <div class="row g-3">
-              <div class="col-md-3">
-                <label class="form-label">GROUP 价</label>
-                <input id="groupPrice" type="number" class="form-control" />
-              </div>
-              <div class="col-md-3">
-                <label class="form-label">ADULT 价</label>
-                <input id="adultPrice" type="number" class="form-control" />
-              </div>
-              <div class="col-md-3">
-                <label class="form-label">YOUTH 价</label>
-                <input id="youthPrice" type="number" class="form-control" />
-              </div>
-              <div class="col-md-3">
-                <label class="form-label">CHILD 价</label>
-                <input id="childPrice" type="number" class="form-control" />
-              </div>
-              <div class="col-md-3">
-                <label class="form-label">INFANT 价</label>
-                <input id="infantPrice" type="number" class="form-control" />
-              </div>
-              <div class="col-md-3">
-                <label class="form-label">SENIOR 价</label>
-                <input id="seniorPrice" type="number" class="form-control" />
-              </div>
-              <div class="col-md-3">
-                <label class="form-label">STUDENT 价</label>
-                <input id="studentPrice" type="number" class="form-control" />
-              </div>
-              <div class="col-md-3">
-                <label class="form-label">currency</label>
-                <input id="currency" value="CNY" class="form-control" />
+                <label class="form-label">时区偏移</label>
+                <input id="timezoneOffset" class="form-control" />
+                <div class="form-hint">写入 availability 时使用，例如 +08:00。</div>
               </div>
               <div class="col-md-4">
                 <label class="form-label">cutoffSeconds</label>
-                <input id="cutoffSeconds" type="number" value="3600" class="form-control" />
+                <input id="cutoffSeconds" type="number" min="0" class="form-control" placeholder="留空则不写入" />
+                <div class="form-hint">GYG availability 的截止预订秒数，可选，0 表示不提前截止。</div>
               </div>
-              <div class="col-md-8 d-flex align-items-end">
-                <button id="saveRange" class="btn btn-primary w-100" type="button">保存到日历</button>
+              <div class="col-12" id="timePointBlock">
+                <label class="form-label">开始时间，逗号分隔</label>
+                <input id="saveTimes" value="10:00,14:00" class="form-control" />
+                <div class="form-hint">TIME_POINT 只接受 HH:MM,HH:MM。</div>
+              </div>
+              <div class="col-12" id="timePeriodBlock">
+                <label class="form-label">时间段，逗号分隔</label>
+                <input id="openingRanges" value="09:00-12:00,14:00-18:00" class="form-control" />
+                <div class="form-hint">TIME_PERIOD 只接受 HH:MM-HH:MM,HH:MM-HH:MM。</div>
               </div>
             </div>
+            <div class="alert alert-info mb-0" id="pricingModeHint"></div>
+            <div class="d-flex gap-2 flex-wrap">
+              <button id="saveRange" class="btn btn-primary" type="button">保存产品信息配置</button>
+              <button id="pushToGyg" class="btn btn-outline-secondary" type="button">推送到 GYG Sandbox</button>
+            </div>
+            <div id="saveRangeFeedback" class="small text-secondary"></div>
           </div>
         </div>
 
         <div class="card mt-3">
           <div class="card-header">
-            <h3 class="card-title">已加载日历</h3>
+            <h3 class="card-title">售卖人群配置</h3>
           </div>
-          <div class="table-wrap">
-            <table class="table table-vcenter card-table">
-              <thead>
-                <tr>
-                  <th>Date</th>
-                  <th>Time</th>
-                  <th>OpeningTimes</th>
-                  <th>Vacancies</th>
-                  <th>Currency</th>
-                  <th>Prices</th>
-                  <th></th>
-                </tr>
-              </thead>
-              <tbody id="tableBody"></tbody>
-            </table>
+          <div class="card-body d-grid gap-4">
+            <div class="text-secondary small" id="productTypeHint"></div>
+            <div id="individualParticipantsBlock" class="row g-3">
+              <div class="col-md-6">
+                <label class="form-label">participantsMin</label>
+                <input id="participantsMin" type="number" min="1" value="1" class="form-control" />
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">participantsMax</label>
+                <input id="participantsMax" type="number" min="1" value="999" class="form-control" />
+              </div>
+            </div>
+            <div id="groupParticipantsBlock" class="row g-3">
+              <div class="col-md-6">
+                <label class="form-label">groupSizeMin</label>
+                <input id="groupSizeMin" type="number" min="1" class="form-control" />
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">groupSizeMax</label>
+                <input id="groupSizeMax" type="number" min="1" class="form-control" />
+              </div>
+            </div>
+            <div id="individualCategoryBlock">
+              <label class="form-label mb-3">支持售卖的人群</label>
+              <div id="pricingCategorySwitches" class="d-grid gap-2"></div>
+            </div>
+            <div id="groupCategoryBlock" class="alert alert-info mb-0">GROUP 商品默认只售卖 GROUP，下面只配置最小和最大参团人数。</div>
+            <div class="d-flex gap-2 flex-wrap">
+              <button id="saveProductSettings" class="btn btn-primary" type="button">保存售卖人群配置</button>
+            </div>
+            <div id="productSettingsFeedback" class="small text-secondary"></div>
           </div>
         </div>
+      </div>
 
-        <div class="card mt-3">
+      <div class="col-12 col-xl-5">
+        <div class="card">
           <div class="card-header">
             <h3 class="card-title">Addons 配置</h3>
           </div>
-          <div class="card-body">
+          <div class="card-body d-grid gap-3">
             <div class="text-secondary small mb-3">currency 自动使用商品币种：<span id="addonsCurrency">-</span></div>
+            <div class="alert alert-info mb-0" id="addonsModeHint"></div>
             <div id="addonsRows" class="d-grid gap-3"></div>
-            <div class="d-flex gap-2 mt-3">
+            <div id="addonsEmptyState" class="text-secondary small">当前没有 Addon，点击“新增 Addon”开始配置。</div>
+            <div class="d-flex gap-2 flex-wrap">
               <button id="addAddonRow" class="btn btn-outline-primary" type="button">新增 Addon</button>
               <button id="saveAddons" class="btn btn-primary" type="button">保存 Addons</button>
             </div>
+            <div id="addonsFeedback" class="small text-secondary"></div>
           </div>
         </div>
 
@@ -2924,10 +2890,13 @@ function calendarPage(id: string, timezone: string): string {
   const script = sharedScript(`
 const PRODUCT_ID = ${JSON.stringify(id)};
 const PRODUCT_TIMEZONE = ${JSON.stringify(timezone)};
-const tableBody = document.getElementById('tableBody');
+const CATEGORY_OPTIONS = ['ADULT', 'YOUTH', 'CHILD', 'INFANT', 'SENIOR', 'STUDENT'];
+const ADDON_TYPES = ['FOOD', 'DRINKS', 'SAFETY', 'TRANSPORT', 'DONATION', 'OTHERS'];
 let currentProductCurrency = 'CNY';
 let currentAvailabilityType = 'TIME_POINT';
 let currentProductType = 'INDIVIDUAL';
+let currentPricingMode = 'MANUAL_IN_GYG';
+let currentSupportedCategories = CATEGORY_OPTIONS.slice();
 
 function print(value) {
   appendLog(value);
@@ -2952,85 +2921,36 @@ function toIso(dateStr, timeStr, tz) {
   return dateStr + 'T' + timeStr + ':00' + tz;
 }
 
-function parseOffsetMinutes(tz) {
-  const match = String(tz || '').trim().match(/^([+-])(\\d{2}):(\\d{2})$/);
-  if (!match) return 0;
-  const sign = match[1] === '-' ? -1 : 1;
-  return sign * (Number(match[2]) * 60 + Number(match[3]));
+function fixedTimezoneOffset() {
+  return PRODUCT_TIMEZONE === 'Asia/Shanghai' ? '+08:00' : '+00:00';
 }
 
-function formatInProductTimeZone(iso) {
-  const date = new Date(iso);
-  if (Number.isNaN(date.getTime())) {
-    return { date: '', time: '' };
+function getTimezoneOffsetValue() {
+  const value = document.getElementById('timezoneOffset').value.trim() || fixedTimezoneOffset();
+  if (!/^[+-]\\d{2}:\\d{2}$/.test(value)) {
+    throw new Error('时区偏移格式必须是 +08:00 这种形式');
   }
-  const dateFmt = new Intl.DateTimeFormat('en-CA', {
-    timeZone: PRODUCT_TIMEZONE,
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit'
-  });
-  const timeFmt = new Intl.DateTimeFormat('en-GB', {
-    timeZone: PRODUCT_TIMEZONE,
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: false
-  });
-  return { date: dateFmt.format(date), time: timeFmt.format(date) };
+  return value;
 }
 
-function dateOnly(iso) {
-  return formatInProductTimeZone(iso).date;
-}
-
-function timeOnly(iso) {
-  return formatInProductTimeZone(iso).time;
-}
-
-function pricesTextFromRow(row) {
-  const prices = row.pricesByCategory && row.pricesByCategory.retailPrices ? row.pricesByCategory.retailPrices : [];
-  return prices.map((item) => item.category + ':' + item.price).join(' | ');
-}
-
-function openingTimesText(row) {
-  const openingTimes = Array.isArray(row.openingTimes) ? row.openingTimes : [];
-  return openingTimes.map((item) => item.fromTime + '-' + item.toTime).join(' | ');
+function showFeedback(elementId, kind, message) {
+  const element = document.getElementById(elementId);
+  if (!element) return;
+  element.className = 'small';
+  if (kind === 'success') {
+    element.classList.add('text-success');
+  } else if (kind === 'error') {
+    element.classList.add('text-danger');
+  } else {
+    element.classList.add('text-secondary');
+  }
+  element.textContent = message;
 }
 
 function updateAvailabilityModeUI() {
   const isTimePoint = currentAvailabilityType === 'TIME_POINT';
   document.getElementById('timePointBlock').style.display = isTimePoint ? 'block' : 'none';
   document.getElementById('timePeriodBlock').style.display = isTimePoint ? 'none' : 'block';
-}
-
-function render(rows) {
-  tableBody.innerHTML = '';
-  (rows || []).forEach((row) => {
-    const tr = document.createElement('tr');
-    const isTimePeriod = Array.isArray(row.openingTimes) && row.openingTimes.length > 0;
-    const displayTime = isTimePeriod ? '-' : timeOnly(row.dateTime);
-    tr.innerHTML =
-      '<td>' + dateOnly(row.dateTime) + '</td>' +
-      '<td>' + displayTime + '</td>' +
-      '<td>' + openingTimesText(row) + '</td>' +
-      '<td>' + (row.vacancies ?? '') + '</td>' +
-      '<td>' + (row.currency ?? '') + '</td>' +
-      '<td>' + pricesTextFromRow(row) + '</td>' +
-      '<td><button type="button" class="btn btn-sm btn-outline-danger" data-del="' + row.id + '">删除</button></td>';
-    tableBody.appendChild(tr);
-  });
-}
-
-async function loadCalendar() {
-  const from = document.getElementById('fromDate').value;
-  const to = document.getElementById('toDate').value;
-  const tz = document.getElementById('tz').value.trim() || '+08:00';
-  const fromIso = toIso(from, '00:00', tz);
-  const toIsoStr = toIso(to, '23:59', tz);
-  const query = '?fromDateTime=' + encodeURIComponent(fromIso) + '&toDateTime=' + encodeURIComponent(toIsoStr);
-  const data = await api('/admin/products/' + encodeURIComponent(PRODUCT_ID) + '/availability' + query);
-  render(data.data || []);
-  print(data);
 }
 
 function listDates(from, to) {
@@ -3043,69 +2963,104 @@ function listDates(from, to) {
   return dates;
 }
 
+function parseTimePoints(raw) {
+  const values = raw.split(',').map((item) => item.trim()).filter(Boolean);
+  if (!values.length) throw new Error('TIME_POINT 模式请填写至少一个开始时间');
+  if (values.some((item) => !/^\\d{2}:\\d{2}$/.test(item))) {
+    throw new Error('TIME_POINT 只接受 HH:MM,HH:MM 形式');
+  }
+  return values;
+}
+
+function parseOpeningRanges(raw) {
+  const values = raw.split(',').map((item) => item.trim()).filter(Boolean);
+  if (!values.length) throw new Error('TIME_PERIOD 模式请填写至少一个时间段');
+  if (values.some((item) => !/^\\d{2}:\\d{2}-\\d{2}:\\d{2}$/.test(item))) {
+    throw new Error('TIME_PERIOD 只接受 HH:MM-HH:MM,HH:MM-HH:MM 形式');
+  }
+  return values.map((range) => {
+    const parts = range.split('-');
+    if (parts[0] >= parts[1]) {
+      throw new Error('时间段结束时间必须晚于开始时间');
+    }
+    return { fromTime: parts[0], toTime: parts[1] };
+  });
+}
+
+function renderPricingCategorySwitches(selectedCategories) {
+  const container = document.getElementById('pricingCategorySwitches');
+  container.innerHTML = '';
+  CATEGORY_OPTIONS.forEach((category) => {
+    const row = document.createElement('label');
+    row.className = 'row align-items-center m-0 border rounded px-3 py-2';
+    row.innerHTML =
+      '<span class="col">' + category + '</span>' +
+      '<span class="col-auto">' +
+        '<label class="form-check form-check-single form-switch mb-0">' +
+          '<input class="form-check-input pricing-category-toggle" type="checkbox" value="' + category + '" ' + (selectedCategories.includes(category) ? 'checked' : '') + ' />' +
+        '</label>' +
+      '</span>';
+    container.appendChild(row);
+  });
+}
+
+function selectedCategoriesFromInputs() {
+  if (currentProductType === 'GROUP') {
+    return ['GROUP'];
+  }
+  return Array.from(document.querySelectorAll('.pricing-category-toggle:checked'))
+    .map((input) => input.value)
+    .sort();
+}
+
+function updateProductSettingsUI() {
+  const isGroup = currentProductType === 'GROUP';
+  document.getElementById('individualParticipantsBlock').style.display = isGroup ? 'none' : 'flex';
+  document.getElementById('groupParticipantsBlock').style.display = isGroup ? 'flex' : 'none';
+  document.getElementById('individualCategoryBlock').style.display = isGroup ? 'none' : 'block';
+  document.getElementById('groupCategoryBlock').style.display = isGroup ? 'block' : 'none';
+  document.getElementById('productTypeHint').textContent = isGroup
+    ? 'GROUP 商品只配置 groupSizeMin 和 groupSizeMax。'
+    : 'INDIVIDUAL 商品默认所有人群开启，可按需单独开关。';
+  document.getElementById('pricingModeHint').textContent = currentPricingMode === 'PRICE_OVER_API'
+    ? '当前已启用 PRICE_OVER_API。本页保存的时间、日期、cutoffSeconds 会生效；数值价格当前不在本页维护。'
+    : '当前未启用 PRICE_OVER_API。本页保存的时间、日期、cutoffSeconds 会生效；价格仍以 GYG 后台手工配置为准。';
+  document.getElementById('addonsModeHint').textContent = currentPricingMode === 'PRICE_OVER_API'
+    ? 'Addons 价格不属于 Prices over API，同样需要在这里维护 retailPrice。'
+    : '即使没有启用 PRICE_OVER_API，Addon 仍需要配置 retailPrice 才能向 GYG 返回。';
+}
+
 async function saveRange() {
-  const mode = currentAvailabilityType === 'TIME_PERIOD' ? 'time_period' : 'time_point';
   const from = document.getElementById('saveFromDate').value;
   const to = document.getElementById('saveToDate').value;
-  const tz = document.getElementById('tz').value.trim() || '+08:00';
-  const vacancies = Number(document.getElementById('vacancies').value);
-  const cutoffSeconds = Number(document.getElementById('cutoffSeconds').value);
+  const cutoffRaw = document.getElementById('cutoffSeconds').value.trim();
+  const tz = getTimezoneOffsetValue();
   if (!from || !to) throw new Error('请选择开始和结束日期');
   if (to < from) throw new Error('结束日期不能小于开始日期');
+  const cutoffSeconds = cutoffRaw === '' ? undefined : Number(cutoffRaw);
+  if (cutoffRaw !== '' && (!Number.isInteger(cutoffSeconds) || cutoffSeconds < 0)) {
+    throw new Error('cutoffSeconds 必须是大于等于 0 的整数');
+  }
 
-  const retailPrices = [];
-  [['GROUP', 'groupPrice'], ['ADULT', 'adultPrice'], ['YOUTH', 'youthPrice'], ['CHILD', 'childPrice'], ['INFANT', 'infantPrice'], ['SENIOR', 'seniorPrice'], ['STUDENT', 'studentPrice']].forEach(([category, id]) => {
-    const value = document.getElementById(id).value.trim();
-    if (value !== '') {
-      retailPrices.push({ category, price: Number(value) });
-    }
-  });
-  if (!retailPrices.length) throw new Error('请至少填写一个价格');
-
-  const hasGroupPrice = retailPrices.some((item) => item.category === 'GROUP');
-  const individualCategories = retailPrices.filter((item) => item.category !== 'GROUP').map((item) => item.category);
-  const useGroupModel = currentProductType === 'GROUP';
-  const vacanciesByCategory = !useGroupModel && individualCategories.length ? individualCategories.map((category) => ({ category, vacancies })) : undefined;
-  const currency = document.getElementById('currency').value.trim().toUpperCase();
   const all = [];
   const dates = listDates(from, to);
 
-  if (mode === 'time_period') {
-    const openingRanges = document.getElementById('openingRanges').value.trim().split(',').map((item) => item.trim()).filter(Boolean);
-    if (!openingRanges.length) throw new Error('time period 模式请填写 openingTimes');
-    if (openingRanges.some((item) => !/^\\d{2}:\\d{2}-\\d{2}:\\d{2}$/.test(item))) {
-      throw new Error('openingTimes 格式应为 HH:MM-HH:MM');
-    }
-    const openingTimes = openingRanges.map((range) => {
-      const [fromTime, toTime] = range.split('-');
-      return { fromTime, toTime };
-    });
+  if (currentAvailabilityType === 'TIME_PERIOD') {
+    const openingTimes = parseOpeningRanges(document.getElementById('openingRanges').value.trim());
     dates.forEach((date) => {
       all.push({
         dateTime: toIso(date, '00:00', tz),
         openingTimes,
-        cutoffSeconds,
-        vacancies: useGroupModel || (hasGroupPrice && !vacanciesByCategory) ? vacancies : undefined,
-        vacanciesByCategory,
-        currency,
-        pricesByCategory: { retailPrices }
+        ...(cutoffSeconds !== undefined ? { cutoffSeconds } : {})
       });
     });
   } else {
-    const times = document.getElementById('saveTimes').value.trim().split(',').map((item) => item.trim()).filter(Boolean);
-    if (!times.length) throw new Error('time point 模式请填写至少一个开始时间');
-    if (times.some((item) => !/^\\d{2}:\\d{2}$/.test(item))) {
-      throw new Error('时间格式应为 HH:MM');
-    }
+    const times = parseTimePoints(document.getElementById('saveTimes').value.trim());
     dates.forEach((date) => {
       times.forEach((time) => {
         all.push({
           dateTime: toIso(date, time, tz),
-          cutoffSeconds,
-          vacancies: useGroupModel || (hasGroupPrice && !vacanciesByCategory) ? vacancies : undefined,
-          vacanciesByCategory,
-          currency,
-          pricesByCategory: { retailPrices }
+          ...(cutoffSeconds !== undefined ? { cutoffSeconds } : {})
         });
       });
     });
@@ -3116,10 +3071,7 @@ async function saveRange() {
     body: JSON.stringify({ availabilities: all })
   });
   print(data);
-  await loadCalendar();
 }
-
-const ADDON_TYPES = ['FOOD', 'DRINKS', 'SAFETY', 'TRANSPORT', 'DONATION', 'OTHERS'];
 
 function createAddonRow(addon) {
   const row = document.createElement('div');
@@ -3128,9 +3080,9 @@ function createAddonRow(addon) {
   const priceValue = addon && typeof addon.retailPrice === 'number' ? String(addon.retailPrice) : '';
   const descValue = addon && addon.addonDescription ? addon.addonDescription.replaceAll('"', '&quot;') : '';
   row.innerHTML =
-    '<div class="col-md-3"><label class="form-label">addonType</label><select class="form-select addonType">' + ADDON_TYPES.map((item) => '<option ' + (item === typeValue ? 'selected' : '') + '>' + item + '</option>').join('') + '</select></div>' +
+    '<div class="col-md-4"><label class="form-label">addonType</label><select class="form-select addonType">' + ADDON_TYPES.map((item) => '<option ' + (item === typeValue ? 'selected' : '') + '>' + item + '</option>').join('') + '</select></div>' +
     '<div class="col-md-3"><label class="form-label">retailPrice</label><input class="form-control addonPrice" type="number" min="0" value="' + priceValue + '" /></div>' +
-    '<div class="col-md-4"><label class="form-label">addonDescription</label><input class="form-control addonDescription" value="' + descValue + '" /></div>' +
+    '<div class="col-md-3"><label class="form-label">addonDescription</label><input class="form-control addonDescription" value="' + descValue + '" /></div>' +
     '<div class="col-md-2"><button type="button" class="btn btn-outline-danger addonRemove w-100">删除</button></div>';
   return row;
 }
@@ -3139,11 +3091,8 @@ function renderAddonsRows(addons) {
   const container = document.getElementById('addonsRows');
   container.innerHTML = '';
   const list = Array.isArray(addons) ? addons : [];
-  if (!list.length) {
-    container.appendChild(createAddonRow({ addonType: 'FOOD' }));
-    return;
-  }
   list.forEach((addon) => container.appendChild(createAddonRow(addon)));
+  document.getElementById('addonsEmptyState').style.display = list.length ? 'none' : 'block';
 }
 
 function collectAddonsRows() {
@@ -3152,7 +3101,8 @@ function collectAddonsRows() {
       const addonType = row.querySelector('.addonType').value;
       const priceRaw = row.querySelector('.addonPrice').value.trim();
       const addonDescription = row.querySelector('.addonDescription').value.trim();
-      if (priceRaw === '') return null;
+      if (priceRaw === '' && !addonDescription) return null;
+      if (priceRaw === '') throw new Error('Addon retailPrice 不能为空');
       const retailPrice = Number(priceRaw);
       if (!Number.isInteger(retailPrice) || retailPrice < 0) {
         throw new Error('addon retailPrice 必须是非负整数');
@@ -3164,81 +3114,82 @@ function collectAddonsRows() {
     .filter(Boolean);
 }
 
-tableBody.addEventListener('click', async (event) => {
-  const button = event.target.closest('button[data-del]');
-  if (!button) return;
-  try {
-    const availabilityId = button.getAttribute('data-del');
-    const data = await api('/admin/products/' + encodeURIComponent(PRODUCT_ID) + '/availability/' + encodeURIComponent(availabilityId), {
-      method: 'DELETE'
-    });
-    print(data);
-    await loadCalendar();
-  } catch (error) {
-    print(String(error));
-  }
-});
-
-document.getElementById('quick7').addEventListener('click', () => {
-  document.getElementById('fromDate').value = today();
-  document.getElementById('toDate').value = addDays(today(), 6);
-});
-
-document.getElementById('quick30').addEventListener('click', () => {
-  document.getElementById('fromDate').value = today();
-  document.getElementById('toDate').value = addDays(today(), 29);
-});
-
-document.getElementById('load').addEventListener('click', () => loadCalendar().catch((error) => print(String(error))));
-document.getElementById('saveRange').addEventListener('click', () => saveRange().catch((error) => print(String(error))));
-
-document.getElementById('saveAutoClose').addEventListener('click', async () => {
-  try {
-    const autoCloseHours = Number(document.getElementById('autoCloseHours').value || 0);
-    const data = await api('/admin/products/' + encodeURIComponent(PRODUCT_ID) + '/settings', {
-      method: 'PATCH',
-      body: JSON.stringify({ autoCloseHours })
-    });
-    print(data);
-  } catch (error) {
-    print(String(error));
-  }
-});
-
-document.getElementById('saveBookingRules').addEventListener('click', async () => {
-  try {
+async function saveProductSettings() {
+  const payload = {};
+  if (currentProductType === 'GROUP') {
+    const groupSizeMin = Number(document.getElementById('groupSizeMin').value);
+    const groupSizeMax = Number(document.getElementById('groupSizeMax').value);
+    if (!Number.isInteger(groupSizeMin) || !Number.isInteger(groupSizeMax) || groupSizeMin < 1 || groupSizeMax < groupSizeMin) {
+      throw new Error('请正确填写 groupSizeMin 和 groupSizeMax');
+    }
+    payload.groupSizeMin = groupSizeMin;
+    payload.groupSizeMax = groupSizeMax;
+    payload.supportedCategories = ['GROUP'];
+    currentSupportedCategories = [];
+  } else {
     const participantsMin = Number(document.getElementById('participantsMin').value || 1);
     const participantsMax = Number(document.getElementById('participantsMax').value || 999);
-    const groupSizeMinRaw = document.getElementById('groupSizeMin').value.trim();
-    const groupSizeMaxRaw = document.getElementById('groupSizeMax').value.trim();
-    const payload = { participantsMin, participantsMax };
-    if (groupSizeMinRaw) payload.groupSizeMin = Number(groupSizeMinRaw);
-    if (groupSizeMaxRaw) payload.groupSizeMax = Number(groupSizeMaxRaw);
-    const data = await api('/admin/products/' + encodeURIComponent(PRODUCT_ID) + '/settings', {
-      method: 'PATCH',
-      body: JSON.stringify(payload)
-    });
-    print(data);
+    const supportedCategories = selectedCategoriesFromInputs();
+    if (!supportedCategories.length) {
+      throw new Error('INDIVIDUAL 商品至少需要开启一个售卖人群');
+    }
+    if (!Number.isInteger(participantsMin) || !Number.isInteger(participantsMax) || participantsMin < 1 || participantsMax < participantsMin) {
+      throw new Error('请正确填写 participantsMin 和 participantsMax');
+    }
+    payload.participantsMin = participantsMin;
+    payload.participantsMax = participantsMax;
+    payload.supportedCategories = supportedCategories;
+    currentSupportedCategories = supportedCategories.slice();
+  }
+  const data = await api('/admin/products/' + encodeURIComponent(PRODUCT_ID) + '/settings', {
+    method: 'PATCH',
+    body: JSON.stringify(payload)
+  });
+  print(data);
+}
+
+document.getElementById('saveRange').addEventListener('click', async () => {
+  try {
+    showFeedback('saveRangeFeedback', 'idle', '正在保存产品信息配置...');
+    await saveRange();
+    showFeedback('saveRangeFeedback', 'success', '产品信息配置已保存');
   } catch (error) {
     print(String(error));
+    showFeedback('saveRangeFeedback', 'error', String(error));
+  }
+});
+
+document.getElementById('saveProductSettings').addEventListener('click', async () => {
+  try {
+    showFeedback('productSettingsFeedback', 'idle', '正在保存售卖人群配置...');
+    await saveProductSettings();
+    showFeedback('productSettingsFeedback', 'success', '售卖人群配置已保存');
+  } catch (error) {
+    print(String(error));
+    showFeedback('productSettingsFeedback', 'error', String(error));
   }
 });
 
 document.getElementById('saveAddons').addEventListener('click', async () => {
   try {
+    showFeedback('addonsFeedback', 'idle', '正在保存 Addons...');
     const addons = collectAddonsRows();
     const data = await api('/admin/products/' + encodeURIComponent(PRODUCT_ID) + '/addons', {
       method: 'PATCH',
       body: JSON.stringify({ addons })
     });
     print(data);
+    renderAddonsRows(addons);
+    showFeedback('addonsFeedback', 'success', 'Addons 已保存');
   } catch (error) {
     print(String(error));
+    showFeedback('addonsFeedback', 'error', String(error));
   }
 });
 
 document.getElementById('addAddonRow').addEventListener('click', () => {
   document.getElementById('addonsRows').appendChild(createAddonRow({ addonType: 'FOOD' }));
+  document.getElementById('addonsEmptyState').style.display = 'none';
 });
 
 document.getElementById('addonsRows').addEventListener('click', (event) => {
@@ -3246,16 +3197,15 @@ document.getElementById('addonsRows').addEventListener('click', (event) => {
   if (!button) return;
   const row = button.closest('.row');
   if (row) row.remove();
-  if (!document.querySelectorAll('#addonsRows .row').length) {
-    document.getElementById('addonsRows').appendChild(createAddonRow({ addonType: 'FOOD' }));
-  }
+  document.getElementById('addonsEmptyState').style.display = document.querySelectorAll('#addonsRows .row').length ? 'none' : 'block';
 });
 
 document.getElementById('pushToGyg').addEventListener('click', async () => {
   try {
-    const from = document.getElementById('fromDate').value;
-    const to = document.getElementById('toDate').value;
-    const tz = document.getElementById('tz').value.trim() || '+08:00';
+    const from = document.getElementById('saveFromDate').value;
+    const to = document.getElementById('saveToDate').value;
+    const tz = getTimezoneOffsetValue();
+    if (!from || !to) throw new Error('请先选择开始和结束日期');
     const data = await api('/admin/products/' + encodeURIComponent(PRODUCT_ID) + '/push-notify-availability-update', {
       method: 'POST',
       body: JSON.stringify({
@@ -3271,20 +3221,27 @@ document.getElementById('pushToGyg').addEventListener('click', async () => {
 
 window.onAdminReady = async () => {
   try {
-    document.getElementById('fromDate').value = today();
-    document.getElementById('toDate').value = addDays(today(), 29);
     document.getElementById('saveFromDate').value = today();
     document.getElementById('saveToDate').value = today();
+    document.getElementById('timezoneOffset').value = fixedTimezoneOffset();
     const product = await api('/admin/products/' + encodeURIComponent(PRODUCT_ID));
     document.getElementById('externalProductId').textContent = product.data && product.data.productId ? product.data.productId : 'N/A';
     currentProductCurrency = product.data && product.data.currency ? String(product.data.currency).toUpperCase() : 'CNY';
     currentAvailabilityType = product.data && product.data.availabilityType ? String(product.data.availabilityType).toUpperCase() : 'TIME_POINT';
     currentProductType = product.data && product.data.productType ? String(product.data.productType).toUpperCase() : 'INDIVIDUAL';
+    currentPricingMode = product.data && product.data.pricingMode ? String(product.data.pricingMode).toUpperCase() : 'MANUAL_IN_GYG';
+    currentSupportedCategories = Array.isArray(product.data && product.data.pricingCategories)
+      ? product.data.pricingCategories.map((item) => item.category).filter((item) => item !== 'GROUP')
+      : CATEGORY_OPTIONS.slice();
+    if (!currentSupportedCategories.length && currentProductType !== 'GROUP') {
+      currentSupportedCategories = CATEGORY_OPTIONS.slice();
+    }
     document.getElementById('productAvailabilityType').textContent = currentAvailabilityType.toLowerCase().replace('_', ' ');
     document.getElementById('productTypeLabel').textContent = currentProductType.toLowerCase();
     document.getElementById('availabilityModeLabel').value = currentAvailabilityType.toLowerCase().replace('_', ' ');
+    document.getElementById('pricingModeLabel').value = currentPricingMode;
+    document.getElementById('currencyLabel').value = currentProductCurrency;
     document.getElementById('addonsCurrency').textContent = currentProductCurrency;
-    document.getElementById('autoCloseHours').value = String(product.data && product.data.autoCloseHours != null ? product.data.autoCloseHours : 0);
     document.getElementById('participantsMin').value = String(product.data && product.data.participantsMin != null ? product.data.participantsMin : 1);
     document.getElementById('participantsMax').value = String(product.data && product.data.participantsMax != null ? product.data.participantsMax : 999);
     const groupCfg = ((product.data && product.data.pricingCategories) || []).find((item) => item.category === 'GROUP');
@@ -3295,8 +3252,9 @@ window.onAdminReady = async () => {
       document.getElementById('groupSizeMax').value = String(groupCfg.groupSizeMax);
     }
     renderAddonsRows(product.data && product.data.addons ? product.data.addons : []);
+    renderPricingCategorySwitches(currentSupportedCategories);
     updateAvailabilityModeUI();
-    await loadCalendar();
+    updateProductSettingsUI();
   } catch (error) {
     print(String(error));
   }

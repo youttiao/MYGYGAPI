@@ -89,47 +89,90 @@ export class ProductRepository {
       groupSizeMin?: number;
       groupSizeMax?: number;
       pricingMode?: 'MANUAL_IN_GYG' | 'PRICE_OVER_API';
+      supportedCategories?: string[];
     }
   ) {
-    if (
-      settings.groupSizeMin !== undefined ||
-      settings.groupSizeMax !== undefined
-    ) {
-      await this.prisma.pricingCategory.upsert({
-        where: {
-          productId_category: {
+    return this.prisma.$transaction(async (tx) => {
+      const supportedCategories = settings.supportedCategories
+        ? Array.from(new Set(settings.supportedCategories.map((item) => item.trim()).filter(Boolean))).sort()
+        : undefined;
+
+      if (supportedCategories !== undefined) {
+        await tx.pricingCategory.deleteMany({
+          where: {
             productId: id,
-            category: 'GROUP'
+            ...(supportedCategories.length > 0 ? { category: { notIn: supportedCategories } } : {})
           }
-        },
-        update: {
-          groupSizeMin: settings.groupSizeMin,
-          groupSizeMax: settings.groupSizeMax
-        },
-        create: {
-          productId: id,
-          category: 'GROUP',
-          groupSizeMin: settings.groupSizeMin,
-          groupSizeMax: settings.groupSizeMax
+        });
+
+        for (const category of supportedCategories) {
+          await tx.pricingCategory.upsert({
+            where: {
+              productId_category: {
+                productId: id,
+                category
+              }
+            },
+            update:
+              category === 'GROUP'
+                ? {
+                    ...(settings.groupSizeMin !== undefined ? { groupSizeMin: settings.groupSizeMin } : {}),
+                    ...(settings.groupSizeMax !== undefined ? { groupSizeMax: settings.groupSizeMax } : {})
+                  }
+                : {},
+            create: {
+              productId: id,
+              category,
+              ...(category === 'GROUP' && settings.groupSizeMin !== undefined
+                ? { groupSizeMin: settings.groupSizeMin }
+                : {}),
+              ...(category === 'GROUP' && settings.groupSizeMax !== undefined
+                ? { groupSizeMax: settings.groupSizeMax }
+                : {})
+            }
+          });
+        }
+      } else if (settings.groupSizeMin !== undefined || settings.groupSizeMax !== undefined) {
+        await tx.pricingCategory.upsert({
+          where: {
+            productId_category: {
+              productId: id,
+              category: 'GROUP'
+            }
+          },
+          update: {
+            groupSizeMin: settings.groupSizeMin,
+            groupSizeMax: settings.groupSizeMax
+          },
+          create: {
+            productId: id,
+            category: 'GROUP',
+            groupSizeMin: settings.groupSizeMin,
+            groupSizeMax: settings.groupSizeMax
+          }
+        });
+      }
+
+      await tx.product.update({
+        where: { id },
+        data: {
+          autoCloseHours: settings.autoCloseHours,
+          participantsMin: settings.participantsMin,
+          participantsMax: settings.participantsMax,
+          pricingMode: settings.pricingMode
         }
       });
-    }
 
-    return this.prisma.product.update({
-      where: { id },
-      data: {
-        autoCloseHours: settings.autoCloseHours,
-        participantsMin: settings.participantsMin,
-        participantsMax: settings.participantsMax,
-        pricingMode: settings.pricingMode
-      },
-      include: {
-        closedDates: {
-          orderBy: { date: 'asc' }
-        },
-        pricingCategories: true,
-        addons: true
-      }
+      return tx.product.findUnique({
+        where: { id },
+        include: {
+          closedDates: {
+            orderBy: { date: 'asc' }
+          },
+          pricingCategories: true,
+          addons: true
+        }
+      });
     });
   }
 

@@ -146,14 +146,15 @@ const MANUAL_OPEN_REASON = 'manual-open';
           });
         }
 
-        if (body.closedDates !== undefined) {
+        if (body.closedDates !== undefined || body.openedDates !== undefined) {
           await tx.productClosedDate.deleteMany({
             where: {
               productId: params.id,
-              OR: [{ reason: null }, { reason: MANUAL_CLOSE_REASON }]
+              OR: [{ reason: null }, { reason: MANUAL_CLOSE_REASON }, { reason: MANUAL_OPEN_REASON }]
             }
           });
-          if (body.closedDates.length > 0) {
+
+          if (body.closedDates !== undefined && body.closedDates.length > 0) {
             await tx.productClosedDate.createMany({
               data: body.closedDates.map((date) => ({
                 productId: params.id,
@@ -162,16 +163,8 @@ const MANUAL_OPEN_REASON = 'manual-open';
               }))
             });
           }
-        }
 
-        if (body.openedDates !== undefined) {
-          await tx.productClosedDate.deleteMany({
-            where: {
-              productId: params.id,
-              reason: MANUAL_OPEN_REASON
-            }
-          });
-          if (body.openedDates.length > 0) {
+          if (body.openedDates !== undefined && body.openedDates.length > 0) {
             await tx.productClosedDate.createMany({
               data: body.openedDates.map((date) => ({
                 productId: params.id,
@@ -257,7 +250,8 @@ const MANUAL_OPEN_REASON = 'manual-open';
         participantsMax: body.participantsMax,
         groupSizeMin: body.groupSizeMin,
         groupSizeMax: body.groupSizeMax,
-        pricingMode: body.pricingMode
+        pricingMode: body.pricingMode,
+        supportedCategories: body.supportedCategories
       });
       return { data: updated };
     }

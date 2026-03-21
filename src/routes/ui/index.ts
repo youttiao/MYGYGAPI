@@ -2081,7 +2081,7 @@ let draftRuleState = {
 };
 let calendarOffset = 0;
 let manualDayDetailBackdrop = null;
-let quickToggleCalendarMode = false;
+let quickToggleCalendarMode = localStorage.getItem('quick-toggle-calendar-mode:' + PRODUCT_ID) === 'true';
 
 function print(value) {
   appendLog(value);
@@ -2697,12 +2697,14 @@ document.getElementById('calendarToday').addEventListener('click', () => {
 document.getElementById('closeDayDetailModal').addEventListener('click', hideDayDetailModal);
 document.getElementById('quickToggleCalendarMode').addEventListener('change', (event) => {
   quickToggleCalendarMode = event.target.checked;
+  localStorage.setItem('quick-toggle-calendar-mode:' + PRODUCT_ID, quickToggleCalendarMode ? 'true' : 'false');
   showSaveFeedback('specialDatesFeedback', 'idle', quickToggleCalendarMode
     ? '快速开关模式已开启，点击日期会直接保存并立即生效'
     : '快速开关模式已关闭');
 });
 
 initializeWorkbenchView();
+document.getElementById('quickToggleCalendarMode').checked = quickToggleCalendarMode;
 
 if (getToken()) {
   window.onAdminReady();
@@ -2746,6 +2748,18 @@ function calendarPage(id: string, timezone: string): string {
               </div>
               <div class="col-md-4">
                 <div class="stat-soft">
+                  <div class="text-secondary small">Pricing Mode</div>
+                  <div id="productPricingMode" class="fw-semibold">loading...</div>
+                </div>
+              </div>
+              <div class="col-md-4">
+                <div class="stat-soft">
+                  <div class="text-secondary small">Currency</div>
+                  <div id="productCurrencyLabel" class="fw-semibold">loading...</div>
+                </div>
+              </div>
+              <div class="col-md-4">
+                <div class="stat-soft">
                   <div class="text-secondary small">Availability Type</div>
                   <div id="productAvailabilityType" class="fw-semibold">loading...</div>
                 </div>
@@ -2771,22 +2785,6 @@ function calendarPage(id: string, timezone: string): string {
               <div class="col-md-4">
                 <label class="form-label">可用性类型</label>
                 <input id="availabilityModeLabel" class="form-control" readonly />
-              </div>
-              <div class="col-md-4">
-                <label class="form-label">价格模式</label>
-                <input id="pricingModeLabel" class="form-control" readonly />
-              </div>
-              <div class="col-md-4">
-                <label class="form-label">商品币种</label>
-                <input id="currencyLabel" class="form-control" readonly />
-              </div>
-              <div class="col-md-4">
-                <label class="form-label">开始日期</label>
-                <input id="saveFromDate" type="date" class="form-control" />
-              </div>
-              <div class="col-md-4">
-                <label class="form-label">结束日期</label>
-                <input id="saveToDate" type="date" class="form-control" />
               </div>
               <div class="col-md-4">
                 <label class="form-label">时区偏移</label>
@@ -2892,6 +2890,7 @@ const PRODUCT_ID = ${JSON.stringify(id)};
 const PRODUCT_TIMEZONE = ${JSON.stringify(timezone)};
 const CATEGORY_OPTIONS = ['ADULT', 'YOUTH', 'CHILD', 'INFANT', 'SENIOR', 'STUDENT'];
 const ADDON_TYPES = ['FOOD', 'DRINKS', 'SAFETY', 'TRANSPORT', 'DONATION', 'OTHERS'];
+const PRODUCT_SETTINGS_DRAFT_KEY = 'product-settings-draft:' + PRODUCT_ID;
 let currentProductCurrency = 'CNY';
 let currentAvailabilityType = 'TIME_POINT';
 let currentProductType = 'INDIVIDUAL';
@@ -2945,6 +2944,18 @@ function showFeedback(elementId, kind, message) {
     element.classList.add('text-secondary');
   }
   element.textContent = message;
+}
+
+function getProductSettingsDraft() {
+  try {
+    return JSON.parse(localStorage.getItem(PRODUCT_SETTINGS_DRAFT_KEY) || '{}');
+  } catch (_error) {
+    return {};
+  }
+}
+
+function saveProductSettingsDraft(draft) {
+  localStorage.setItem(PRODUCT_SETTINGS_DRAFT_KEY, JSON.stringify(draft));
 }
 
 function updateAvailabilityModeUI() {
@@ -3023,54 +3034,36 @@ function updateProductSettingsUI() {
     ? 'GROUP 商品只配置 groupSizeMin 和 groupSizeMax。'
     : 'INDIVIDUAL 商品默认所有人群开启，可按需单独开关。';
   document.getElementById('pricingModeHint').textContent = currentPricingMode === 'PRICE_OVER_API'
-    ? '当前已启用 PRICE_OVER_API。本页保存的时间、日期、cutoffSeconds 会生效；数值价格当前不在本页维护。'
-    : '当前未启用 PRICE_OVER_API。本页保存的时间、日期、cutoffSeconds 会生效；价格仍以 GYG 后台手工配置为准。';
+    ? '当前已启用 PRICE_OVER_API。这里保存的是当前浏览器里的时间与 cutoff 草稿，供后续操作复用。'
+    : '当前未启用 PRICE_OVER_API。这里保存的是当前浏览器里的时间与 cutoff 草稿，价格仍以 GYG 后台手工配置为准。';
   document.getElementById('addonsModeHint').textContent = currentPricingMode === 'PRICE_OVER_API'
     ? 'Addons 价格不属于 Prices over API，同样需要在这里维护 retailPrice。'
     : '即使没有启用 PRICE_OVER_API，Addon 仍需要配置 retailPrice 才能向 GYG 返回。';
 }
 
 async function saveRange() {
-  const from = document.getElementById('saveFromDate').value;
-  const to = document.getElementById('saveToDate').value;
   const cutoffRaw = document.getElementById('cutoffSeconds').value.trim();
   const tz = getTimezoneOffsetValue();
-  if (!from || !to) throw new Error('请选择开始和结束日期');
-  if (to < from) throw new Error('结束日期不能小于开始日期');
   const cutoffSeconds = cutoffRaw === '' ? undefined : Number(cutoffRaw);
   if (cutoffRaw !== '' && (!Number.isInteger(cutoffSeconds) || cutoffSeconds < 0)) {
     throw new Error('cutoffSeconds 必须是大于等于 0 的整数');
   }
 
-  const all = [];
-  const dates = listDates(from, to);
+  const draft = {
+    timezoneOffset: tz,
+    cutoffSeconds: cutoffRaw,
+    saveTimes: document.getElementById('saveTimes').value.trim(),
+    openingRanges: document.getElementById('openingRanges').value.trim()
+  };
 
   if (currentAvailabilityType === 'TIME_PERIOD') {
-    const openingTimes = parseOpeningRanges(document.getElementById('openingRanges').value.trim());
-    dates.forEach((date) => {
-      all.push({
-        dateTime: toIso(date, '00:00', tz),
-        openingTimes,
-        ...(cutoffSeconds !== undefined ? { cutoffSeconds } : {})
-      });
-    });
+    parseOpeningRanges(draft.openingRanges);
   } else {
-    const times = parseTimePoints(document.getElementById('saveTimes').value.trim());
-    dates.forEach((date) => {
-      times.forEach((time) => {
-        all.push({
-          dateTime: toIso(date, time, tz),
-          ...(cutoffSeconds !== undefined ? { cutoffSeconds } : {})
-        });
-      });
-    });
+    parseTimePoints(draft.saveTimes);
   }
 
-  const data = await api('/admin/products/' + encodeURIComponent(PRODUCT_ID) + '/availability', {
-    method: 'POST',
-    body: JSON.stringify({ availabilities: all })
-  });
-  print(data);
+  saveProductSettingsDraft(draft);
+  print({ data: draft, message: 'saved_to_browser_local_storage' });
 }
 
 function createAddonRow(addon) {
@@ -3150,9 +3143,9 @@ async function saveProductSettings() {
 
 document.getElementById('saveRange').addEventListener('click', async () => {
   try {
-    showFeedback('saveRangeFeedback', 'idle', '正在保存产品信息配置...');
+    showFeedback('saveRangeFeedback', 'idle', '正在保存产品信息配置到当前浏览器...');
     await saveRange();
-    showFeedback('saveRangeFeedback', 'success', '产品信息配置已保存');
+    showFeedback('saveRangeFeedback', 'success', '产品信息配置已保存到当前浏览器');
   } catch (error) {
     print(String(error));
     showFeedback('saveRangeFeedback', 'error', String(error));
@@ -3202,10 +3195,9 @@ document.getElementById('addonsRows').addEventListener('click', (event) => {
 
 document.getElementById('pushToGyg').addEventListener('click', async () => {
   try {
-    const from = document.getElementById('saveFromDate').value;
-    const to = document.getElementById('saveToDate').value;
+    const from = today();
+    const to = addDays(today(), 29);
     const tz = getTimezoneOffsetValue();
-    if (!from || !to) throw new Error('请先选择开始和结束日期');
     const data = await api('/admin/products/' + encodeURIComponent(PRODUCT_ID) + '/push-notify-availability-update', {
       method: 'POST',
       body: JSON.stringify({
@@ -3221,9 +3213,17 @@ document.getElementById('pushToGyg').addEventListener('click', async () => {
 
 window.onAdminReady = async () => {
   try {
-    document.getElementById('saveFromDate').value = today();
-    document.getElementById('saveToDate').value = today();
-    document.getElementById('timezoneOffset').value = fixedTimezoneOffset();
+    const draft = getProductSettingsDraft();
+    document.getElementById('timezoneOffset').value = draft.timezoneOffset || fixedTimezoneOffset();
+    if (typeof draft.cutoffSeconds === 'string') {
+      document.getElementById('cutoffSeconds').value = draft.cutoffSeconds;
+    }
+    if (typeof draft.saveTimes === 'string' && draft.saveTimes) {
+      document.getElementById('saveTimes').value = draft.saveTimes;
+    }
+    if (typeof draft.openingRanges === 'string' && draft.openingRanges) {
+      document.getElementById('openingRanges').value = draft.openingRanges;
+    }
     const product = await api('/admin/products/' + encodeURIComponent(PRODUCT_ID));
     document.getElementById('externalProductId').textContent = product.data && product.data.productId ? product.data.productId : 'N/A';
     currentProductCurrency = product.data && product.data.currency ? String(product.data.currency).toUpperCase() : 'CNY';
@@ -3238,9 +3238,9 @@ window.onAdminReady = async () => {
     }
     document.getElementById('productAvailabilityType').textContent = currentAvailabilityType.toLowerCase().replace('_', ' ');
     document.getElementById('productTypeLabel').textContent = currentProductType.toLowerCase();
+    document.getElementById('productPricingMode').textContent = currentPricingMode;
+    document.getElementById('productCurrencyLabel').textContent = currentProductCurrency;
     document.getElementById('availabilityModeLabel').value = currentAvailabilityType.toLowerCase().replace('_', ' ');
-    document.getElementById('pricingModeLabel').value = currentPricingMode;
-    document.getElementById('currencyLabel').value = currentProductCurrency;
     document.getElementById('addonsCurrency').textContent = currentProductCurrency;
     document.getElementById('participantsMin').value = String(product.data && product.data.participantsMin != null ? product.data.participantsMin : 1);
     document.getElementById('participantsMax').value = String(product.data && product.data.participantsMax != null ? product.data.participantsMax : 999);
